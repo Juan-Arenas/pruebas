@@ -18,21 +18,30 @@ const intensityVal = document.getElementById('intensity-val');
 const API_KEY = "AIzaSyAwkDcos9APbj5PVzuKXYMpJo0bX0AfMaE"; // Reemplaza con tu API Key de Google AI Studio
 
 // Navigation Logic
+const views = {
+    'prompt': document.getElementById('view-prompt'),
+    'sounds': document.getElementById('view-sounds'),
+    'results': document.getElementById('view-results'),
+    'settings': document.getElementById('view-settings')
+};
+
 navBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-        const view = btn.dataset.view;
-        if (!view) return;
+        const selectedView = btn.dataset.view;
+        if (!selectedView) return;
 
+        // Toggle active button
         navBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
-        if (view === 'prompt') {
-            viewPrompt.classList.remove('hidden');
-            viewSounds.classList.add('hidden');
-        } else if (view === 'sounds') {
-            viewPrompt.classList.add('hidden');
-            viewSounds.classList.remove('hidden');
-        }
+        // Show/Hide sections
+        Object.keys(views).forEach(v => {
+            if (v === selectedView) {
+                views[v].classList.remove('hidden');
+            } else {
+                views[v].classList.add('hidden');
+            }
+        });
     });
 });
 
@@ -131,8 +140,8 @@ async function generateResponse() {
             throw new Error("Por favor, configura tu API Key en script.js");
         }
 
-        // Using v1 endpoint which is more stable for general models
-        const finalUrl = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${API_KEY.trim()}`;
+        // Using v1beta endpoint which is required for AI Studio keys and newer models
+        const finalUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${API_KEY.trim()}`;
 
         const response = await fetch(finalUrl, {
             method: 'POST',
