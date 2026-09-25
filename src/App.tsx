@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Search, ShoppingBag, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import './index.css';
 
