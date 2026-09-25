@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Image as ImageIcon, Shield } from 'lucide-react';
 import './index.css';
 
 type Product = {
@@ -13,20 +13,26 @@ type Product = {
 
 type CartItem = Product & { quantity: number };
 
-const ALL_PRODUCTS: Product[] = [
+const INITIAL_PRODUCTS: Product[] = [
   { id: 1, name: 'CLUB DE NUIT INTENSE', price: '$220.000', priceRaw: 220000, image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&q=80&w=600', category: 'Amaderados' },
   { id: 2, name: 'LATTAFA ASAD', price: '$150.000', priceRaw: 150000, image: 'https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?auto=format&fit=crop&q=80&w=600', category: 'Amaderados' },
   { id: 3, name: 'YARA ROSA', price: '$140.000', priceRaw: 140000, image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=600', category: 'Dulces' },
   { id: 4, name: 'HAWAS FOR HIM', price: '$260.000', priceRaw: 260000, image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&q=80&w=600', category: 'Cítricos' },
-  { id: 5, name: 'AL HARAMAIN DETOUR', price: '$170.000', priceRaw: 170000, image: 'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?auto=format&fit=crop&q=80&w=600', category: 'Dulces' },
-  { id: 6, name: 'AFNAN 9 PM', price: '$180.000', priceRaw: 180000, image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&q=80&w=600', category: 'Dulces' },
-  { id: 7, name: 'KHAMRAH LATTAFA', price: '$190.000', priceRaw: 190000, image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&q=80&w=600', category: 'Dulces' },
-  { id: 8, name: 'CLUB DE NUIT UNTOLD', price: '$240.000', priceRaw: 240000, image: 'https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?auto=format&fit=crop&q=80&w=600', category: 'Dulces' },
 ];
 
 const CATEGORIES = ['Todas', 'Amaderados', 'Dulces', 'Cítricos'];
 
 function App() {
+  // DB State (Mocked with LocalStorage)
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('hermida_db_products');
+    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+  });
+  const [siteLogo, setSiteLogo] = useState(() => {
+    return localStorage.getItem('hermida_db_logo') || '/logo.jpg';
+  });
+
+  // App State
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('hermida_cart');
     return saved ? JSON.parse(saved) : [];
@@ -34,31 +40,73 @@ function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Admin State
   const [logoClicks, setLogoClicks] = useState(0);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [isAdminAuth, setIsAdminAuth] = useState(false);
+  const [pin, setPin] = useState(['', '', '', '']);
+  const pinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
+  
+  // Admin Dashboard State
+  const [adminTab, setAdminTab] = useState<'products' | 'add' | 'settings'>('products');
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+  // Sync DB to LocalStorage
   useEffect(() => {
+    localStorage.setItem('hermida_db_products', JSON.stringify(products));
+    localStorage.setItem('hermida_db_logo', siteLogo);
     localStorage.setItem('hermida_cart', JSON.stringify(cart));
-  }, [cart]);
+  }, [products, siteLogo, cart]);
 
+  // Admin Click Logic
   useEffect(() => {
     if (logoClicks >= 3) {
-      const pwd = prompt("Acceso al Panel de Administrador. Ingrese contraseña:");
-      // Simple frontend check for demo. DO NOT hardcode real passwords in production!
-      if (pwd === import.meta.env.VITE_ADMIN_PASSWORD || pwd === "admin123") {
-         alert("¡Bienvenido al panel! (Esta es una versión de demostración)");
-      } else if (pwd !== null) {
-         alert("Contraseña incorrecta.");
+      if (!isAdminAuth) {
+        setShowAdminLogin(true);
+        setPin(['', '', '', '']);
       }
       setLogoClicks(0);
     }
-    
     let timer: number;
     if (logoClicks > 0) {
-      timer = window.setTimeout(() => setLogoClicks(0), 1500);
+      timer = window.setTimeout(() => setLogoClicks(0), 1000);
     }
     return () => clearTimeout(timer);
-  }, [logoClicks]);
+  }, [logoClicks, isAdminAuth]);
 
+  // PIN Input Logic
+  const handlePinChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newPin = [...pin];
+    newPin[index] = value;
+    setPin(newPin);
+
+    if (value && index < 3) {
+      pinRefs[index + 1].current?.focus();
+    }
+  };
+
+  const handlePinKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !pin[index] && index > 0) {
+      pinRefs[index - 1].current?.focus();
+    }
+  };
+
+  const verifyPin = () => {
+    const enteredPin = pin.join('');
+    // Mock PIN logic. In production this should be validated via backend
+    if (enteredPin === '1234') { 
+      setIsAdminAuth(true);
+      setShowAdminLogin(false);
+    } else {
+      alert('PIN Incorrecto');
+      setPin(['', '', '', '']);
+      pinRefs[0].current?.focus();
+    }
+  };
+
+  // Cart Logic
   const addToCart = (product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
@@ -69,7 +117,6 @@ function App() {
     });
     setIsCartOpen(true);
   };
-
   const updateQuantity = (id: number, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
@@ -79,27 +126,52 @@ function App() {
       return item;
     }));
   };
-
-  const removeFromCart = (id: number) => {
-    setCart(prev => prev.filter(item => item.id !== id));
-  };
-
+  const removeFromCart = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
   const cartTotal = cart.reduce((sum, item) => sum + (item.priceRaw * item.quantity), 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
-    
     let text = "Hola Hermida Perfumes, quiero hacer el siguiente pedido:%0A%0A";
     cart.forEach(item => {
       text += `🛍️ ${item.quantity}x ${item.name} - $${(item.priceRaw * item.quantity).toLocaleString('es-CO')}%0A`;
     });
     text += `%0A💰 *Total: $${cartTotal.toLocaleString('es-CO')}*`;
-    
     window.open(`https://wa.me/573144679154?text=${text}`, '_blank');
   };
 
-  const filteredProducts = ALL_PRODUCTS.filter(p => {
+  // Admin DB Logic
+  const handleDeleteProduct = (id: number) => {
+    if (confirm('¿Estás seguro de eliminar este perfume?')) {
+      setProducts(prev => prev.filter(p => p.id !== id));
+      setCart(prev => prev.filter(c => c.id !== id));
+    }
+  };
+
+  const handleSaveProduct = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const priceRaw = parseInt(formData.get('priceRaw') as string);
+    
+    const newProduct: Product = {
+      id: editingProduct ? editingProduct.id : Date.now(),
+      name: formData.get('name') as string,
+      price: `$${priceRaw.toLocaleString('es-CO')}`,
+      priceRaw: priceRaw,
+      image: formData.get('image') as string,
+      category: formData.get('category') as string,
+    };
+
+    if (editingProduct) {
+      setProducts(prev => prev.map(p => p.id === newProduct.id ? newProduct : p));
+      setEditingProduct(null);
+    } else {
+      setProducts(prev => [...prev, newProduct]);
+    }
+    setAdminTab('products');
+  };
+
+  const filteredProducts = products.filter(p => {
     const matchesCategory = activeCategory === 'Todas' || p.category === activeCategory;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -107,14 +179,15 @@ function App() {
 
   return (
     <>
+      {/* HEADER */}
       <header className="header">
         <div className="header-top">
           <div className="header-spacer"></div>
-          <div className="header-logo" onClick={() => setLogoClicks(c => c + 1)} style={{ cursor: 'pointer' }}>
-            <img src="/logo.jpg" alt="Hermida Perfumes" />
+          <div className="header-logo" onClick={() => setLogoClicks(c => c + 1)} style={{ cursor: 'pointer' }} title="Toca 3 veces para administrador">
+            <img src={siteLogo} alt="Hermida Perfumes" />
           </div>
           <div className="header-icons">
-            <User size={24} />
+            <User size={24} onClick={() => setShowAdminLogin(true)} style={{ cursor: 'pointer' }} />
             <div className="cart-icon-wrapper" onClick={() => setIsCartOpen(true)}>
               <ShoppingBag size={24} />
               {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
@@ -129,6 +202,7 @@ function App() {
       </header>
 
       <main>
+        {/* BANNER */}
         <section className="image-banner">
           <div className="banner-content">
             <p className="banner-subtitle">LA EXCLUSIVIDAD HECHA AROMA</p>
@@ -140,6 +214,7 @@ function App() {
           </div>
         </section>
 
+        {/* CATALOGO */}
         <section className="featured-collection" id="catalogo">
           <div className="section-header">
             <h2>Catálogo Oficial</h2>
@@ -156,7 +231,6 @@ function App() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            
             <div className="categories-filter">
               {CATEGORIES.map(cat => (
                 <button 
@@ -172,7 +246,7 @@ function App() {
 
           {filteredProducts.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#888' }}>
-              <p>No se encontraron perfumes con esa búsqueda.</p>
+              <p>No se encontraron perfumes.</p>
             </div>
           ) : (
             <div className="product-grid">
@@ -194,9 +268,10 @@ function App() {
           )}
         </section>
 
+        {/* COMO PEDIR */}
         <section className="secondary-banner" id="como-pedir">
           <div className="secondary-banner-content">
-            <img src="/logo.jpg" alt="Hermida Perfumes Logo" className="secondary-banner-logo" />
+            <img src={siteLogo} alt="Hermida Perfumes Logo" className="secondary-banner-logo" />
             <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#fff' }}>¿CÓMO HACER TU PEDIDO?</h2>
             <div className="order-steps-container">
               <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 1. Agrega tus perfumes favoritos al carrito.</p>
@@ -208,6 +283,7 @@ function App() {
         </section>
       </main>
 
+      {/* FOOTER */}
       <footer className="footer" id="contacto">
         <div className="footer-content">
           <div className="footer-column">
@@ -215,23 +291,6 @@ function App() {
             <p style={{ fontSize: '1rem', color: '#aaa', lineHeight: '1.8' }}>
               Nos especializamos en ofrecer perfumes originales de la más alta calidad, con envíos seguros a nivel nacional. Tu esencia, nuestra pasión.
             </p>
-            <div className="social-links">
-              <a href="https://instagram.com/hermidaperfumes" target="_blank" rel="noreferrer">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-              </a>
-              <a href="https://tiktok.com/@hermida.perfumes" target="_blank" rel="noreferrer">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 15.68a6.34 6.34 0 0 0 6.27 6.36 6.34 6.34 0 0 0 6.33-6.33V8.53a8.17 8.17 0 0 0 4.79 1.54V6.62a4.91 4.91 0 0 1-2.8-.93Z"/></svg>
-              </a>
-            </div>
-          </div>
-          <div className="footer-column">
-            <h3>Enlaces Rápidos</h3>
-            <ul>
-              <li><a href="#catalogo">Catálogo</a></li>
-              <li><a href="#como-pedir">Cómo pedir</a></li>
-              <li><a href="#">Políticas de envío</a></li>
-              <li><a href="#">Términos y condiciones</a></li>
-            </ul>
           </div>
           <div className="footer-column">
             <h3>Contáctanos</h3>
@@ -241,28 +300,141 @@ function App() {
             </ul>
           </div>
         </div>
-        <div className="footer-bottom">
-          PAGINA DEMO HECHA POR JUAN ARENAS :)
-        </div>
+        <div className="footer-bottom">PAGINA DEMO HECHA POR JUAN ARENAS :)</div>
       </footer>
+
+      {/* ADMIN LOGIN MODAL */}
+      {showAdminLogin && (
+        <div className="modal-overlay">
+          <div className="admin-login-modal">
+            <button className="modal-close" onClick={() => setShowAdminLogin(false)}><X size={20} /></button>
+            <div className="admin-login-header">
+              <Shield size={32} color="var(--color-button)" />
+              <h2>Acceso Administrativo</h2>
+            </div>
+            <p className="admin-login-desc">Ingresa el PIN de 4 dígitos para gestionar el catálogo:</p>
+            <div className="pin-inputs">
+              {pin.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={pinRefs[i]}
+                  type="password"
+                  maxLength={1}
+                  value={digit}
+                  onChange={e => handlePinChange(i, e.target.value)}
+                  onKeyDown={e => handlePinKeyDown(i, e)}
+                  className="pin-box"
+                  autoComplete="off"
+                />
+              ))}
+            </div>
+            <button className="btn admin-submit-btn" onClick={verifyPin}>
+              Entrar al Panel
+            </button>
+            <p style={{marginTop: '1rem', fontSize: '0.75rem', color: '#666'}}>PIN de prueba: 1234</p>
+          </div>
+        </div>
+      )}
+
+      {/* ADMIN DASHBOARD MODAL */}
+      {isAdminAuth && (
+        <div className="admin-dashboard-overlay">
+          <div className="admin-dashboard">
+            <div className="admin-header">
+              <h2>Panel de Control</h2>
+              <button className="modal-close" onClick={() => setIsAdminAuth(false)}><X size={24} /></button>
+            </div>
+            <div className="admin-tabs">
+              <button className={adminTab === 'products' ? 'active' : ''} onClick={() => { setAdminTab('products'); setEditingProduct(null); }}>Productos</button>
+              <button className={adminTab === 'add' || editingProduct ? 'active' : ''} onClick={() => { setAdminTab('add'); setEditingProduct(null); }}>
+                {editingProduct ? 'Editar Producto' : 'Agregar Producto'}
+              </button>
+              <button className={adminTab === 'settings' ? 'active' : ''} onClick={() => setAdminTab('settings')}>Configuración</button>
+            </div>
+            
+            <div className="admin-content">
+              {adminTab === 'products' && !editingProduct && (
+                <div className="admin-products-list">
+                  {products.map(p => (
+                    <div key={p.id} className="admin-product-item">
+                      <img src={p.image} alt={p.name} />
+                      <div className="admin-product-info">
+                        <h4>{p.name}</h4>
+                        <p>{p.price}</p>
+                      </div>
+                      <div className="admin-product-actions">
+                        <button onClick={() => { setEditingProduct(p); setAdminTab('add'); }} className="edit-btn"><Edit size={18} /></button>
+                        <button onClick={() => handleDeleteProduct(p.id)} className="del-btn"><Trash2 size={18} /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(adminTab === 'add' || editingProduct) && (
+                <form className="admin-form" onSubmit={handleSaveProduct}>
+                  <div className="form-group">
+                    <label>Nombre del Perfume</label>
+                    <input type="text" name="name" defaultValue={editingProduct?.name} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Precio (Ej: 180000)</label>
+                    <input type="number" name="priceRaw" defaultValue={editingProduct?.priceRaw} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Categoría</label>
+                    <select name="category" defaultValue={editingProduct?.category || 'Amaderados'}>
+                      <option value="Amaderados">Amaderados</option>
+                      <option value="Dulces">Dulces</option>
+                      <option value="Cítricos">Cítricos</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>URL de Imagen</label>
+                    <input type="url" name="image" defaultValue={editingProduct?.image} required placeholder="https://..." />
+                  </div>
+                  <button type="submit" className="btn form-submit-btn">
+                    <Save size={18} /> {editingProduct ? 'Guardar Cambios' : 'Agregar Producto'}
+                  </button>
+                </form>
+              )}
+
+              {adminTab === 'settings' && (
+                <div className="admin-form">
+                  <div className="form-group">
+                    <label>URL del Logotipo</label>
+                    <input 
+                      type="text" 
+                      value={siteLogo} 
+                      onChange={e => setSiteLogo(e.target.value)} 
+                      placeholder="Ej: /logo.jpg o https://..." 
+                    />
+                    <small style={{ color: '#888', marginTop: '0.5rem', display: 'block' }}>Para subir una imagen local, necesitas cambiar el código o usar una base de datos real. Por ahora, usa una URL.</small>
+                  </div>
+                  <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(255,50,50,0.1)', border: '1px solid #ff3333', borderRadius: '8px' }}>
+                    <h3 style={{ color: '#ff3333', marginBottom: '1rem' }}>Conexión a Base de Datos</h3>
+                    <p style={{ color: '#ccc', fontSize: '0.9rem' }}>
+                      Actualmente el panel guarda los datos en la <b>memoria de tu navegador (LocalStorage)</b>. Esto significa que solo tú ves los cambios.
+                      Para que los cambios se guarden "en los archivos" y todos los clientes lo vean en tiempo real, se requiere conectar la web a un servidor como <b>Supabase</b> o <b>Firebase</b>.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cart Sidebar */}
       {isCartOpen && <div className="cart-overlay" onClick={() => setIsCartOpen(false)}></div>}
       <div className={`cart-sidebar ${isCartOpen ? 'open' : ''}`}>
         <div className="cart-header">
           <h2>Tu Carrito ({cartCount})</h2>
-          <button className="close-cart-btn" onClick={() => setIsCartOpen(false)}>
-            <X size={24} />
-          </button>
+          <button className="close-cart-btn" onClick={() => setIsCartOpen(false)}><X size={24} /></button>
         </div>
-        
         <div className="cart-items">
           {cart.length === 0 ? (
-            <div className="empty-cart">
-              <ShoppingBag size={48} />
-              <p>Tu carrito está vacío</p>
-              <button className="btn" onClick={() => setIsCartOpen(false)}>Ver Catálogo</button>
-            </div>
+             <div className="empty-cart"><ShoppingBag size={48} /><p>Tu carrito está vacío</p></div>
           ) : (
             cart.map(item => (
               <div key={item.id} className="cart-item">
@@ -276,41 +448,20 @@ function App() {
                       <span>{item.quantity}</span>
                       <button onClick={() => updateQuantity(item.id, 1)}><Plus size={14} /></button>
                     </div>
-                    <button className="remove-item-btn" onClick={() => removeFromCart(item.id)}>
-                      <Trash2 size={16} />
-                    </button>
+                    <button className="remove-item-btn" onClick={() => removeFromCart(item.id)}><Trash2 size={16} /></button>
                   </div>
                 </div>
               </div>
             ))
           )}
         </div>
-
         {cart.length > 0 && (
           <div className="cart-footer">
-            <div className="cart-total">
-              <span>Total Estimado:</span>
-              <span>${cartTotal.toLocaleString('es-CO')}</span>
-            </div>
-            <button className="checkout-btn" onClick={handleCheckout}>
-              Hacer Pedido por WhatsApp <Phone size={18} />
-            </button>
+            <div className="cart-total"><span>Total:</span><span>${cartTotal.toLocaleString('es-CO')}</span></div>
+            <button className="checkout-btn" onClick={handleCheckout}>Hacer Pedido por WhatsApp <Phone size={18} /></button>
           </div>
         )}
       </div>
-
-      {/* Floating WhatsApp Button */}
-      <a 
-        href="https://wa.me/573144679154?text=Hola,%20vengo%20de%20la%20página%20web%20y%20me%20gustaría%20hacer%20un%20pedido." 
-        className="whatsapp-float" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        aria-label="Contact us on WhatsApp"
-      >
-        <svg viewBox="0 0 32 32" width="30" height="30" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-          <path d="M16.002 0C7.178 0 0 7.178 0 16c0 2.802.73 5.438 2.015 7.747L.31 29.897l6.32-1.658c2.247 1.155 4.764 1.8 7.373 1.8 8.824 0 16-7.176 16-16S24.825 0 16.002 0zm0 27.355c-2.33 0-4.52-.605-6.425-1.656l-.46-.255-4.773 1.252 1.272-4.653-.284-.45C4.248 19.68 3.593 17.89 3.593 16c0-6.84 5.566-12.408 12.41-12.408 6.842 0 12.408 5.568 12.408 12.408 0 6.84-5.566 12.407-12.41 12.407zM22.82 18.61c-.372-.186-2.203-1.088-2.545-1.213-.34-.123-.59-.185-.838.186-.248.373-.96 1.214-1.178 1.46-.217.25-.435.28-.807.094-2.12-.11-3.692-.938-4.995-2.607-.272-.346.26-.33.987-1.785.123-.248.06-.465-.03-.65-.094-.187-.838-2.022-1.15-2.766-.3-.725-.603-.627-.838-.638-.216-.01-.465-.01-.713-.01-.25 0-.65.093-.99.465-.342.373-1.304 1.274-1.304 3.104 0 1.832 1.335 3.6 1.52 3.848.187.25 2.625 4.007 6.362 5.623 2.146.924 3.01.996 4.015.84 1.155-.18 2.204-.9 2.513-1.772.31-.87.31-1.614.218-1.77-.094-.155-.342-.25-.714-.436z"/>
-        </svg>
-      </a>
     </>
   );
 }
