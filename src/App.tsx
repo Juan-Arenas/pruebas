@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, Sun, Moon, UploadCloud } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from './firebase';
+import { db } from './firebase';
 import './index.css';
 
 type Product = {
@@ -170,23 +169,54 @@ function App() {
     window.open(`https://wa.me/${phoneNumber}?text=${text}`, '_blank');
   };
 
-  // Upload Logic
+  // Compresión de imagen Base64
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 600;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Comprimir como JPEG al 70% de calidad
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(dataUrl);
+        };
+        img.onerror = (e) => reject(e);
+      };
+      reader.onerror = (e) => reject(e);
+    });
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isLogo = false) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsUploading(true);
     try {
-      const fileRef = ref(storage, `images/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
+      const base64Img = await compressImage(file);
       if (isLogo) {
-        handleSaveLogo(url);
+        handleSaveLogo(base64Img);
       } else {
-        setTempImageUrl(url);
+        setTempImageUrl(base64Img);
       }
     } catch (error) {
       console.error(error);
-      alert("Error al subir imagen. ¿Activaste Firebase Storage en tu consola?");
+      alert("Error al procesar la imagen. Intenta con otra.");
     }
     setIsUploading(false);
   };
