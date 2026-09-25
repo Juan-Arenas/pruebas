@@ -15,13 +15,13 @@ type Product = {
 
 type CartItem = Product & { quantity: number };
 
-const CATEGORIES = ['Todas', 'Amaderados', 'Dulces', 'Cítricos'];
-
 function App() {
   // DB State (Firebase Firestore)
   const [products, setProducts] = useState<Product[]>([]);
   const [siteLogo, setSiteLogo] = useState('/logo.jpg');
   const [adminPin, setAdminPin] = useState('1234');
+  const [phoneNumber, setPhoneNumber] = useState('573144679154');
+  const [categories, setCategories] = useState(['Amaderados', 'Dulces', 'Cítricos']);
   const [loading, setLoading] = useState(true);
 
   // App State
@@ -56,15 +56,21 @@ function App() {
       setLoading(false);
     });
 
-    // 2. Suscribirse a la configuración (Logo y PIN)
+    // 2. Suscribirse a la configuración (Logo, PIN, Teléfono, Categorías)
     const unsubscribeSettings = onSnapshot(doc(db, 'settings', 'global'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         if (data.siteLogo) setSiteLogo(data.siteLogo);
         if (data.adminPin) setAdminPin(data.adminPin);
+        if (data.phoneNumber) setPhoneNumber(data.phoneNumber);
+        if (data.categories) setCategories(data.categories);
       } else {
-        // Inicializar documento de settings si no existe
-        setDoc(doc(db, 'settings', 'global'), { siteLogo: '/logo.jpg', adminPin: '1234' });
+        setDoc(doc(db, 'settings', 'global'), { 
+          siteLogo: '/logo.jpg', 
+          adminPin: '1234',
+          phoneNumber: '573144679154',
+          categories: ['Amaderados', 'Dulces', 'Cítricos']
+        });
       }
     });
 
@@ -167,7 +173,7 @@ function App() {
       text += `🛍️ ${item.quantity}x ${item.name} - $${(item.priceRaw * item.quantity).toLocaleString('es-CO')}%0A`;
     });
     text += `%0A💰 *Total: $${cartTotal.toLocaleString('es-CO')}*`;
-    window.open(`https://wa.me/573144679154?text=${text}`, '_blank');
+    window.open(`https://wa.me/${phoneNumber}?text=${text}`, '_blank');
   };
 
   // Firebase Admin Logic
@@ -212,12 +218,10 @@ function App() {
   };
 
   const handleSaveLogo = async (newLogo: string) => {
-    setSiteLogo(newLogo); // Actualización optimista
+    setSiteLogo(newLogo);
     try {
       await updateDoc(doc(db, 'settings', 'global'), { siteLogo: newLogo });
-    } catch (error) {
-      console.error("Error al actualizar logo:", error);
-    }
+    } catch (error) { console.error("Error:", error); }
   };
 
   const handleSavePin = async (newPin: string) => {
@@ -226,9 +230,24 @@ function App() {
     try {
       await updateDoc(doc(db, 'settings', 'global'), { adminPin: newPin });
       alert("PIN actualizado correctamente.");
-    } catch (error) {
-      console.error("Error al actualizar PIN:", error);
-    }
+    } catch (error) { console.error("Error:", error); }
+  };
+
+  const handleSavePhone = async (newPhone: string) => {
+    setPhoneNumber(newPhone);
+    try {
+      await updateDoc(doc(db, 'settings', 'global'), { phoneNumber: newPhone });
+      alert("Teléfono de WhatsApp actualizado.");
+    } catch (error) { console.error("Error:", error); }
+  };
+
+  const handleSaveCategories = async (catsString: string) => {
+    const newCats = catsString.split(',').map(c => c.trim()).filter(Boolean);
+    setCategories(newCats);
+    try {
+      await updateDoc(doc(db, 'settings', 'global'), { categories: newCats });
+      alert("Categorías actualizadas.");
+    } catch (error) { console.error("Error:", error); }
   };
 
   const filteredProducts = products.filter(p => {
@@ -292,7 +311,7 @@ function App() {
               />
             </div>
             <div className="categories-filter">
-              {CATEGORIES.map(cat => (
+              {['Todas', ...categories].map(cat => (
                 <button 
                   key={cat} 
                   className={`category-btn ${activeCategory === cat ? 'active' : ''}`}
@@ -359,7 +378,7 @@ function App() {
           <div className="footer-column">
             <h3>Contáctanos</h3>
             <ul>
-              <li><a href="https://wa.me/573144679154"><Phone size={18} color="var(--color-button)" /> +57 314 4679154</a></li>
+              <li><a href={`https://wa.me/${phoneNumber}`}><Phone size={18} color="var(--color-button)" /> +{phoneNumber}</a></li>
               <li><a href="#"><MapPin size={18} color="var(--color-button)" /> Envíos a todo Colombia</a></li>
             </ul>
           </div>
@@ -447,10 +466,10 @@ function App() {
                   </div>
                   <div className="form-group">
                     <label>Categoría</label>
-                    <select name="category" defaultValue={editingProduct?.category || 'Amaderados'}>
-                      <option value="Amaderados">Amaderados</option>
-                      <option value="Dulces">Dulces</option>
-                      <option value="Cítricos">Cítricos</option>
+                    <select name="category" defaultValue={editingProduct?.category || categories[0]}>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="form-group">
@@ -473,8 +492,42 @@ function App() {
                       onChange={e => handleSaveLogo(e.target.value)} 
                       placeholder="Ej: /logo.jpg o https://..." 
                     />
-                    <small style={{ color: '#888', marginTop: '0.5rem', display: 'block' }}>El cambio se guarda y se refleja inmediatamente para todos los usuarios.</small>
                   </div>
+                  
+                  <div className="form-group">
+                    <label>Número de WhatsApp (Ej: 573144679154)</label>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <input 
+                        type="text" 
+                        defaultValue={phoneNumber}
+                        id="newPhoneInput"
+                        onKeyPress={(e) => {
+                          if (!/[0-9]/.test(e.key)) e.preventDefault();
+                        }}
+                      />
+                      <button className="btn" onClick={() => {
+                        const input = document.getElementById('newPhoneInput') as HTMLInputElement;
+                        handleSavePhone(input.value);
+                      }}>Guardar</button>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Categorías del Catálogo (Separadas por coma)</label>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <input 
+                        type="text" 
+                        defaultValue={categories.join(', ')}
+                        id="newCategoriesInput"
+                      />
+                      <button className="btn" onClick={() => {
+                        const input = document.getElementById('newCategoriesInput') as HTMLInputElement;
+                        handleSaveCategories(input.value);
+                      }}>Guardar</button>
+                    </div>
+                    <small style={{ color: '#888', marginTop: '0.5rem', display: 'block' }}>La categoría "Todas" siempre se mostrará por defecto.</small>
+                  </div>
+
                   <div className="form-group" style={{ marginTop: '2rem' }}>
                     <label>Cambiar PIN de Acceso (4 dígitos)</label>
                     <div style={{ display: 'flex', gap: '1rem' }}>
@@ -484,9 +537,7 @@ function App() {
                         placeholder="Nuevo PIN (Ej: 1234)" 
                         id="newPinInput"
                         onKeyPress={(e) => {
-                          if (!/[0-9]/.test(e.key)) {
-                            e.preventDefault();
-                          }
+                          if (!/[0-9]/.test(e.key)) e.preventDefault();
                         }}
                       />
                       <button 
@@ -504,12 +555,11 @@ function App() {
                         Actualizar PIN
                       </button>
                     </div>
-                    <small style={{ color: '#888', marginTop: '0.5rem', display: 'block' }}>No olvides tu nuevo PIN, ya que es la única forma de acceder al panel.</small>
                   </div>
                   <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(50,255,100,0.1)', border: '1px solid #32ff64', borderRadius: '8px' }}>
                     <h3 style={{ color: '#32ff64', marginBottom: '1rem' }}>Conexión Establecida</h3>
                     <p style={{ color: '#ccc', fontSize: '0.9rem' }}>
-                      El sistema está <b>conectado a Firebase</b>. Cualquier cambio que hagas aquí afectará a todos los visitantes de la página de forma inmediata en tiempo real.
+                      El sistema está <b>conectado a Firebase</b>. Cualquier cambio que hagas aquí afectará a todos los visitantes de la página de forma inmediata.
                     </p>
                   </div>
                 </div>
@@ -556,6 +606,19 @@ function App() {
           </div>
         )}
       </div>
+      
+      {/* Floating WhatsApp Button */}
+      <a 
+        href={`https://wa.me/${phoneNumber}?text=Hola,%20vengo%20de%20la%20página%20web%20y%20me%20gustaría%20hacer%20un%20pedido.`}
+        className="whatsapp-float" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        aria-label="Contact us on WhatsApp"
+      >
+        <svg viewBox="0 0 32 32" width="30" height="30" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16.002 0C7.178 0 0 7.178 0 16c0 2.802.73 5.438 2.015 7.747L.31 29.897l6.32-1.658c2.247 1.155 4.764 1.8 7.373 1.8 8.824 0 16-7.176 16-16S24.825 0 16.002 0zm0 27.355c-2.33 0-4.52-.605-6.425-1.656l-.46-.255-4.773 1.252 1.272-4.653-.284-.45C4.248 19.68 3.593 17.89 3.593 16c0-6.84 5.566-12.408 12.41-12.408 6.842 0 12.408 5.568 12.408 12.408 0 6.84-5.566 12.407-12.41 12.407zM22.82 18.61c-.372-.186-2.203-1.088-2.545-1.213-.34-.123-.59-.185-.838.186-.248.373-.96 1.214-1.178 1.46-.217.25-.435.28-.807.094-2.12-.11-3.692-.938-4.995-2.607-.272-.346.26-.33.987-1.785.123-.248.06-.465-.03-.65-.094-.187-.838-2.022-1.15-2.766-.3-.725-.603-.627-.838-.638-.216-.01-.465-.01-.713-.01-.25 0-.65.093-.99.465-.342.373-1.304 1.274-1.304 3.104 0 1.832 1.335 3.6 1.52 3.848.187.25 2.625 4.007 6.362 5.623 2.146.924 3.01.996 4.015.84 1.155-.18 2.204-.9 2.513-1.772.31-.87.31-1.614.218-1.77-.094-.155-.342-.25-.714-.436z"/>
+        </svg>
+      </a>
     </>
   );
 }
