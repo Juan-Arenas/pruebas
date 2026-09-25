@@ -59,6 +59,16 @@ function App() {
     localStorage.setItem('hermida_cart', JSON.stringify(cart));
   }, [products, siteLogo, cart]);
 
+  // Prevent body scroll when modals are open
+  useEffect(() => {
+    if (showAdminLogin || isAdminAuth || isCartOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [showAdminLogin, isAdminAuth, isCartOpen]);
+
   // Admin Click Logic
   useEffect(() => {
     if (logoClicks >= 3) {
