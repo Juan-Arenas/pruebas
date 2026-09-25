@@ -177,16 +177,16 @@ ul {
   position: relative;
   height: 60vh;
   display: flex;
-  align-items: center;
+  align-items: flex-end; /* Move button to bottom so it doesn't overlap text */
   justify-content: center;
-  background: linear-gradient(to right, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%), url('/banner.jpeg') center/cover no-repeat;
+  background: url('/banner.jpeg') center/cover no-repeat;
   padding: 4rem;
   text-align: center;
   border-bottom: 1px solid var(--color-border);
 }
 
 body.dark-theme .image-banner {
-  background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%), url('/banner2.png') center/cover no-repeat;
+  background: url('/banner2.png') center/cover no-repeat;
 }
 
 .banner-content {
@@ -239,6 +239,23 @@ body.dark-theme .banner-content {
 
 .btn:hover {
   background-color: var(--color-button-hover);
+}
+
+.banner-btn {
+  padding: 1rem 3rem;
+  border-radius: 50px;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  transition: all 0.3s ease;
+  margin-bottom: 2rem;
+}
+
+.banner-btn:hover {
+  background: var(--color-button);
+  color: var(--color-button-text);
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
 }
 
 /* Catalog Section */
@@ -875,7 +892,7 @@ body.dark-theme .banner-content {
 /* --- ADMIN DASHBOARD --- */
 .admin-dashboard {
   background: var(--color-background);
-  background-image: linear-gradient(to right, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%), url('/banner.jpeg');
+  background-image: url('/banner.jpeg');
   background-size: cover;
   background-position: center;
   width: 95%;
@@ -891,7 +908,7 @@ body.dark-theme .banner-content {
 }
 
 body.dark-theme .admin-dashboard {
-  background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)), url('/banner2.png');
+  background-image: url('/banner2.png');
 }
 
 .admin-close-btn {

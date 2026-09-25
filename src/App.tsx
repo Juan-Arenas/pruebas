@@ -331,10 +331,7 @@ function App() {
       <main>
         <section className="image-banner">
           <div className="banner-content">
-            <p className="banner-subtitle">LA EXCLUSIVIDAD HECHA AROMA</p>
-            <h1 className="banner-title">Hermida Perfumes</h1>
-            <p className="banner-description">Descubre la esencia perfecta con nuestra colección de perfumería árabe, nicho y diseñador. Envíos 100% seguros a nivel nacional.</p>
-            <a href="#catalogo" className="btn">
+            <a href="#catalogo" className="btn banner-btn">
               Explorar Catálogo <ShoppingBag size={18} />
             </a>
           </div>
