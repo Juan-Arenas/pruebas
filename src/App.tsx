@@ -21,6 +21,7 @@ function App() {
   // DB State (Firebase Firestore)
   const [products, setProducts] = useState<Product[]>([]);
   const [siteLogo, setSiteLogo] = useState('/logo.jpg');
+  const [adminPin, setAdminPin] = useState('1234');
   const [loading, setLoading] = useState(true);
 
   // App State
@@ -55,13 +56,15 @@ function App() {
       setLoading(false);
     });
 
-    // 2. Suscribirse a la configuración (Logo)
+    // 2. Suscribirse a la configuración (Logo y PIN)
     const unsubscribeSettings = onSnapshot(doc(db, 'settings', 'global'), (docSnap) => {
-      if (docSnap.exists() && docSnap.data().siteLogo) {
-        setSiteLogo(docSnap.data().siteLogo);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.siteLogo) setSiteLogo(data.siteLogo);
+        if (data.adminPin) setAdminPin(data.adminPin);
       } else {
         // Inicializar documento de settings si no existe
-        setDoc(doc(db, 'settings', 'global'), { siteLogo: '/logo.jpg' });
+        setDoc(doc(db, 'settings', 'global'), { siteLogo: '/logo.jpg', adminPin: '1234' });
       }
     });
 
@@ -122,9 +125,10 @@ function App() {
 
   const verifyPin = () => {
     const enteredPin = pin.join('');
-    if (enteredPin === '1234') { 
+    if (enteredPin === adminPin) { 
       setIsAdminAuth(true);
       setShowAdminLogin(false);
+      setPin(['', '', '', '']); // Reset para la proxima vez
     } else {
       alert('PIN Incorrecto');
       setPin(['', '', '', '']);
@@ -210,9 +214,20 @@ function App() {
   const handleSaveLogo = async (newLogo: string) => {
     setSiteLogo(newLogo); // Actualización optimista
     try {
-      await setDoc(doc(db, 'settings', 'global'), { siteLogo: newLogo });
+      await updateDoc(doc(db, 'settings', 'global'), { siteLogo: newLogo });
     } catch (error) {
       console.error("Error al actualizar logo:", error);
+    }
+  };
+
+  const handleSavePin = async (newPin: string) => {
+    if (newPin.length !== 4 || !/^\d+$/.test(newPin)) return;
+    setAdminPin(newPin);
+    try {
+      await updateDoc(doc(db, 'settings', 'global'), { adminPin: newPin });
+      alert("PIN actualizado correctamente.");
+    } catch (error) {
+      console.error("Error al actualizar PIN:", error);
     }
   };
 
@@ -380,7 +395,6 @@ function App() {
             <button className="btn admin-submit-btn" onClick={verifyPin}>
               Entrar al Panel
             </button>
-            <p style={{marginTop: '1rem', fontSize: '0.75rem', color: '#666'}}>PIN de prueba: 1234</p>
           </div>
         </div>
       )}
@@ -460,6 +474,37 @@ function App() {
                       placeholder="Ej: /logo.jpg o https://..." 
                     />
                     <small style={{ color: '#888', marginTop: '0.5rem', display: 'block' }}>El cambio se guarda y se refleja inmediatamente para todos los usuarios.</small>
+                  </div>
+                  <div className="form-group" style={{ marginTop: '2rem' }}>
+                    <label>Cambiar PIN de Acceso (4 dígitos)</label>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <input 
+                        type="text" 
+                        maxLength={4}
+                        placeholder="Nuevo PIN (Ej: 1234)" 
+                        id="newPinInput"
+                        onKeyPress={(e) => {
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                      <button 
+                        className="btn" 
+                        onClick={() => {
+                          const input = document.getElementById('newPinInput') as HTMLInputElement;
+                          if (input.value.length === 4) {
+                            handleSavePin(input.value);
+                            input.value = '';
+                          } else {
+                            alert('El PIN debe tener exactamente 4 dígitos.');
+                          }
+                        }}
+                      >
+                        Actualizar PIN
+                      </button>
+                    </div>
+                    <small style={{ color: '#888', marginTop: '0.5rem', display: 'block' }}>No olvides tu nuevo PIN, ya que es la única forma de acceder al panel.</small>
                   </div>
                   <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(50,255,100,0.1)', border: '1px solid #32ff64', borderRadius: '8px' }}>
                     <h3 style={{ color: '#32ff64', marginBottom: '1rem' }}>Conexión Establecida</h3>
