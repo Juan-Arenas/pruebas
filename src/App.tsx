@@ -364,7 +364,7 @@ function App() {
             </ul>
           </div>
         </div>
-        <div className="footer-bottom">PAGINA DEMO HECHA POR JUAN ARENAS :)</div>
+        <div className="footer-bottom">© {new Date().getFullYear()} Hermida Perfumes. Todos los derechos reservados.</div>
       </footer>
 
       {/* ADMIN LOGIN MODAL */}
