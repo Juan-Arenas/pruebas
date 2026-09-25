@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield } from 'lucide-react';
+import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, Sun, Moon, UploadCloud } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from './firebase';
 import './index.css';
 
 type Product = {
@@ -16,6 +17,9 @@ type Product = {
 type CartItem = Product & { quantity: number };
 
 function App() {
+  // Theme State
+  const [theme, setTheme] = useState('dark');
+
   // DB State (Firebase Firestore)
   const [products, setProducts] = useState<Product[]>([]);
   const [siteLogo, setSiteLogo] = useState('/logo.jpg');
@@ -41,22 +45,25 @@ function App() {
   const pinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
   
   // Admin Dashboard State
-  const [adminTab, setAdminTab] = useState<'products' | 'add' | 'settings'>('products');
+  const [adminTab, setAdminTab] = useState<'menu' | 'products' | 'add' | 'settings'>('menu');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [tempImageUrl, setTempImageUrl] = useState('');
+
+  // Apply theme to body
+  useEffect(() => {
+    document.body.className = theme === 'light' ? 'light-theme' : '';
+  }, [theme]);
 
   // Firebase Realtime Connection
   useEffect(() => {
-    // 1. Suscribirse a los productos
     const unsubscribeProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
       const prods: Product[] = [];
-      snapshot.forEach((doc) => {
-        prods.push({ id: doc.id, ...doc.data() } as Product);
-      });
+      snapshot.forEach((doc) => prods.push({ id: doc.id, ...doc.data() } as Product));
       setProducts(prods);
       setLoading(false);
     });
 
-    // 2. Suscribirse a la configuración (Logo, PIN, Teléfono, Categorías)
     const unsubscribeSettings = onSnapshot(doc(db, 'settings', 'global'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -80,12 +87,8 @@ function App() {
     };
   }, []);
 
-  // Save Cart to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('hermida_cart', JSON.stringify(cart));
-  }, [cart]);
+  useEffect(() => localStorage.setItem('hermida_cart', JSON.stringify(cart)), [cart]);
 
-  // Prevent body scroll when modals are open
   useEffect(() => {
     if (showAdminLogin || isAdminAuth || isCartOpen) {
       document.body.style.overflow = 'hidden';
@@ -95,7 +98,6 @@ function App() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [showAdminLogin, isAdminAuth, isCartOpen]);
 
-  // Admin Click Logic
   useEffect(() => {
     if (logoClicks >= 3) {
       if (!isAdminAuth) {
@@ -111,22 +113,16 @@ function App() {
     return () => clearTimeout(timer);
   }, [logoClicks, isAdminAuth]);
 
-  // PIN Input Logic
   const handlePinChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
     const newPin = [...pin];
     newPin[index] = value;
     setPin(newPin);
-
-    if (value && index < 3) {
-      pinRefs[index + 1].current?.focus();
-    }
+    if (value && index < 3) pinRefs[index + 1].current?.focus();
   };
 
   const handlePinKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !pin[index] && index > 0) {
-      pinRefs[index - 1].current?.focus();
-    }
+    if (e.key === 'Backspace' && !pin[index] && index > 0) pinRefs[index - 1].current?.focus();
   };
 
   const verifyPin = () => {
@@ -134,7 +130,8 @@ function App() {
     if (enteredPin === adminPin) { 
       setIsAdminAuth(true);
       setShowAdminLogin(false);
-      setPin(['', '', '', '']); // Reset para la proxima vez
+      setPin(['', '', '', '']); 
+      setAdminTab('menu');
     } else {
       alert('PIN Incorrecto');
       setPin(['', '', '', '']);
@@ -142,13 +139,10 @@ function App() {
     }
   };
 
-  // Cart Logic
   const addToCart = (product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      }
+      if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       return [...prev, { ...product, quantity: 1 }];
     });
     setIsCartOpen(true);
@@ -176,16 +170,33 @@ function App() {
     window.open(`https://wa.me/${phoneNumber}?text=${text}`, '_blank');
   };
 
-  // Firebase Admin Logic
+  // Upload Logic
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isLogo = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const fileRef = ref(storage, `images/${Date.now()}_${file.name}`);
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      if (isLogo) {
+        handleSaveLogo(url);
+      } else {
+        setTempImageUrl(url);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error al subir imagen. ¿Activaste Firebase Storage en tu consola?");
+    }
+    setIsUploading(false);
+  };
+
   const handleDeleteProduct = async (id: string) => {
     if (confirm('¿Estás seguro de eliminar este perfume?')) {
       try {
         await deleteDoc(doc(db, 'products', id));
         setCart(prev => prev.filter(c => c.id !== id));
-      } catch (error) {
-        console.error("Error al eliminar:", error);
-        alert("Error al eliminar. Revisa tu conexión a Firebase.");
-      }
+      } catch (error) { console.error(error); }
     }
   };
 
@@ -193,12 +204,18 @@ function App() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const priceRaw = parseInt(formData.get('priceRaw') as string);
+    const imgToSave = tempImageUrl || (editingProduct?.image || '');
     
+    if (!imgToSave) {
+      alert("Debes subir una imagen para el producto.");
+      return;
+    }
+
     const productData = {
       name: formData.get('name') as string,
       price: `$${priceRaw.toLocaleString('es-CO')}`,
       priceRaw: priceRaw,
-      image: formData.get('image') as string,
+      image: imgToSave,
       category: formData.get('category') as string,
     };
 
@@ -210,18 +227,17 @@ function App() {
         await setDoc(doc(db, 'products', newId), productData);
       }
       setEditingProduct(null);
+      setTempImageUrl('');
       setAdminTab('products');
-    } catch (error) {
-      console.error("Error al guardar:", error);
-      alert("Error al guardar producto.");
-    }
+    } catch (error) { console.error(error); }
   };
 
   const handleSaveLogo = async (newLogo: string) => {
     setSiteLogo(newLogo);
     try {
       await updateDoc(doc(db, 'settings', 'global'), { siteLogo: newLogo });
-    } catch (error) { console.error("Error:", error); }
+      alert("Logo actualizado con éxito.");
+    } catch (error) { console.error(error); }
   };
 
   const handleSavePin = async (newPin: string) => {
@@ -230,15 +246,15 @@ function App() {
     try {
       await updateDoc(doc(db, 'settings', 'global'), { adminPin: newPin });
       alert("PIN actualizado correctamente.");
-    } catch (error) { console.error("Error:", error); }
+    } catch (error) { console.error(error); }
   };
 
   const handleSavePhone = async (newPhone: string) => {
     setPhoneNumber(newPhone);
     try {
       await updateDoc(doc(db, 'settings', 'global'), { phoneNumber: newPhone });
-      alert("Teléfono de WhatsApp actualizado.");
-    } catch (error) { console.error("Error:", error); }
+      alert("Teléfono actualizado.");
+    } catch (error) { console.error(error); }
   };
 
   const handleSaveCategories = async (catsString: string) => {
@@ -247,7 +263,7 @@ function App() {
     try {
       await updateDoc(doc(db, 'settings', 'global'), { categories: newCats });
       alert("Categorías actualizadas.");
-    } catch (error) { console.error("Error:", error); }
+    } catch (error) { console.error(error); }
   };
 
   const filteredProducts = products.filter(p => {
@@ -258,14 +274,16 @@ function App() {
 
   return (
     <>
-      {/* HEADER */}
       <header className="header">
         <div className="header-top">
           <div className="header-spacer"></div>
-          <div className="header-logo" onClick={() => setLogoClicks(c => c + 1)} style={{ cursor: 'pointer' }} title="Toca 3 veces para administrador">
+          <div className="header-logo" onClick={() => setLogoClicks(c => c + 1)} style={{ cursor: 'pointer' }}>
             <img src={siteLogo} alt="Hermida Perfumes" />
           </div>
           <div className="header-icons">
+            <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="theme-toggle">
+              {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
+            </button>
             <User size={24} onClick={() => setShowAdminLogin(true)} style={{ cursor: 'pointer' }} />
             <div className="cart-icon-wrapper" onClick={() => setIsCartOpen(true)}>
               <ShoppingBag size={24} />
@@ -281,7 +299,6 @@ function App() {
       </header>
 
       <main>
-        {/* BANNER */}
         <section className="image-banner">
           <div className="banner-content">
             <p className="banner-subtitle">LA EXCLUSIVIDAD HECHA AROMA</p>
@@ -293,7 +310,6 @@ function App() {
           </div>
         </section>
 
-        {/* CATALOGO */}
         <section className="featured-collection" id="catalogo">
           <div className="section-header">
             <h2>Catálogo Oficial</h2>
@@ -325,11 +341,11 @@ function App() {
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#888' }}>
-              <p>Cargando productos desde la base de datos...</p>
+              <p>Cargando productos...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#888' }}>
-              <p>No se encontraron perfumes. ¡Agrega uno desde el panel de administrador!</p>
+              <p>No hay perfumes en esta categoría.</p>
             </div>
           ) : (
             <div className="product-grid">
@@ -351,28 +367,26 @@ function App() {
           )}
         </section>
 
-        {/* COMO PEDIR */}
         <section className="secondary-banner" id="como-pedir">
           <div className="secondary-banner-content">
             <img src={siteLogo} alt="Hermida Perfumes Logo" className="secondary-banner-logo" />
             <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#fff' }}>¿CÓMO HACER TU PEDIDO?</h2>
             <div className="order-steps-container">
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 1. Agrega tus perfumes favoritos al carrito.</p>
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 2. Toca el botón de "Hacer pedido" en tu carrito.</p>
+              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 1. Agrega perfumes al carrito.</p>
+              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 2. Toca "Hacer pedido" en tu carrito.</p>
               <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 3. Se enviará tu orden lista por WhatsApp.</p>
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 4. ¡Listo! Despachamos tu pedido de inmediato.</p>
+              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 4. Despachamos de inmediato.</p>
             </div>
           </div>
         </section>
       </main>
 
-      {/* FOOTER */}
       <footer className="footer" id="contacto">
         <div className="footer-content">
           <div className="footer-column">
             <h3>HERMIDA PERFUMES</h3>
             <p style={{ fontSize: '1rem', color: '#aaa', lineHeight: '1.8' }}>
-              Nos especializamos en ofrecer perfumes originales de la más alta calidad, con envíos seguros a nivel nacional. Tu esencia, nuestra pasión.
+              Nos especializamos en ofrecer perfumes originales de la más alta calidad, con envíos seguros a nivel nacional.
             </p>
           </div>
           <div className="footer-column">
@@ -386,7 +400,6 @@ function App() {
         <div className="footer-bottom">© {new Date().getFullYear()} Hermida Perfumes. Todos los derechos reservados.</div>
       </footer>
 
-      {/* ADMIN LOGIN MODAL */}
       {showAdminLogin && (
         <div className="modal-overlay">
           <div className="admin-login-modal">
@@ -395,7 +408,6 @@ function App() {
               <Shield size={32} color="var(--color-button)" />
               <h2>Acceso Administrativo</h2>
             </div>
-            <p className="admin-login-desc">Ingresa el PIN de 4 dígitos para gestionar el catálogo:</p>
             <div className="pin-inputs">
               {pin.map((digit, i) => (
                 <input
@@ -411,165 +423,140 @@ function App() {
                 />
               ))}
             </div>
-            <button className="btn admin-submit-btn" onClick={verifyPin}>
-              Entrar al Panel
-            </button>
+            <button className="btn admin-submit-btn" onClick={verifyPin}>Entrar</button>
           </div>
         </div>
       )}
 
-      {/* ADMIN DASHBOARD MODAL */}
       {isAdminAuth && (
         <div className="admin-dashboard-overlay">
           <div className="admin-dashboard">
-            <div className="admin-header">
-              <h2>Panel de Control (En Vivo)</h2>
-              <button className="modal-close" onClick={() => setIsAdminAuth(false)}><X size={24} /></button>
-            </div>
-            <div className="admin-tabs">
-              <button className={adminTab === 'products' ? 'active' : ''} onClick={() => { setAdminTab('products'); setEditingProduct(null); }}>Productos</button>
-              <button className={adminTab === 'add' || editingProduct ? 'active' : ''} onClick={() => { setAdminTab('add'); setEditingProduct(null); }}>
-                {editingProduct ? 'Editar Producto' : 'Agregar Producto'}
-              </button>
-              <button className={adminTab === 'settings' ? 'active' : ''} onClick={() => setAdminTab('settings')}>Configuración</button>
-            </div>
+            <button className="admin-close-btn" onClick={() => setIsAdminAuth(false)}><X size={28} /></button>
             
-            <div className="admin-content">
-              {adminTab === 'products' && !editingProduct && (
-                <div className="admin-products-list">
-                  {products.length === 0 && <p style={{color: '#888'}}>No hay productos en la base de datos.</p>}
-                  {products.map(p => (
-                    <div key={p.id} className="admin-product-item">
-                      <img src={p.image} alt={p.name} />
-                      <div className="admin-product-info">
-                        <h4>{p.name}</h4>
-                        <p>{p.price}</p>
-                      </div>
-                      <div className="admin-product-actions">
-                        <button onClick={() => { setEditingProduct(p); setAdminTab('add'); }} className="edit-btn"><Edit size={18} /></button>
-                        <button onClick={() => handleDeleteProduct(p.id)} className="del-btn"><Trash2 size={18} /></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {(adminTab === 'add' || editingProduct) && (
-                <form className="admin-form" onSubmit={handleSaveProduct}>
-                  <div className="form-group">
-                    <label>Nombre del Perfume</label>
-                    <input type="text" name="name" defaultValue={editingProduct?.name} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Precio (Ej: 180000)</label>
-                    <input type="number" name="priceRaw" defaultValue={editingProduct?.priceRaw} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Categoría</label>
-                    <select name="category" defaultValue={editingProduct?.category || categories[0]}>
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>URL de Imagen</label>
-                    <input type="url" name="image" defaultValue={editingProduct?.image} required placeholder="https://..." />
-                  </div>
-                  <button type="submit" className="btn form-submit-btn">
-                    <Save size={18} /> {editingProduct ? 'Guardar Cambios' : 'Agregar a la Nube'}
+            {adminTab === 'menu' && (
+              <div className="admin-menu-view">
+                <h2>¿Qué cambios quieres realizar?</h2>
+                <div className="admin-menu-buttons">
+                  <button onClick={() => { setAdminTab('products'); setEditingProduct(null); }}>
+                    🛍️ Ver o Eliminar Productos
                   </button>
-                </form>
-              )}
-
-              {adminTab === 'settings' && (
-                <div className="admin-form">
-                  <div className="form-group">
-                    <label>URL del Logotipo</label>
-                    <input 
-                      type="text" 
-                      value={siteLogo} 
-                      onChange={e => handleSaveLogo(e.target.value)} 
-                      placeholder="Ej: /logo.jpg o https://..." 
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Número de WhatsApp (Ej: 573144679154)</label>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <input 
-                        type="text" 
-                        defaultValue={phoneNumber}
-                        id="newPhoneInput"
-                        onKeyPress={(e) => {
-                          if (!/[0-9]/.test(e.key)) e.preventDefault();
-                        }}
-                      />
-                      <button className="btn" onClick={() => {
-                        const input = document.getElementById('newPhoneInput') as HTMLInputElement;
-                        handleSavePhone(input.value);
-                      }}>Guardar</button>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Categorías del Catálogo (Separadas por coma)</label>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <input 
-                        type="text" 
-                        defaultValue={categories.join(', ')}
-                        id="newCategoriesInput"
-                      />
-                      <button className="btn" onClick={() => {
-                        const input = document.getElementById('newCategoriesInput') as HTMLInputElement;
-                        handleSaveCategories(input.value);
-                      }}>Guardar</button>
-                    </div>
-                    <small style={{ color: '#888', marginTop: '0.5rem', display: 'block' }}>La categoría "Todas" siempre se mostrará por defecto.</small>
-                  </div>
-
-                  <div className="form-group" style={{ marginTop: '2rem' }}>
-                    <label>Cambiar PIN de Acceso (4 dígitos)</label>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <input 
-                        type="text" 
-                        maxLength={4}
-                        placeholder="Nuevo PIN (Ej: 1234)" 
-                        id="newPinInput"
-                        onKeyPress={(e) => {
-                          if (!/[0-9]/.test(e.key)) e.preventDefault();
-                        }}
-                      />
-                      <button 
-                        className="btn" 
-                        onClick={() => {
-                          const input = document.getElementById('newPinInput') as HTMLInputElement;
-                          if (input.value.length === 4) {
-                            handleSavePin(input.value);
-                            input.value = '';
-                          } else {
-                            alert('El PIN debe tener exactamente 4 dígitos.');
-                          }
-                        }}
-                      >
-                        Actualizar PIN
-                      </button>
-                    </div>
-                  </div>
-                  <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(50,255,100,0.1)', border: '1px solid #32ff64', borderRadius: '8px' }}>
-                    <h3 style={{ color: '#32ff64', marginBottom: '1rem' }}>Conexión Establecida</h3>
-                    <p style={{ color: '#ccc', fontSize: '0.9rem' }}>
-                      El sistema está <b>conectado a Firebase</b>. Cualquier cambio que hagas aquí afectará a todos los visitantes de la página de forma inmediata.
-                    </p>
-                  </div>
+                  <button onClick={() => { setAdminTab('add'); setEditingProduct(null); setTempImageUrl(''); }}>
+                    ➕ Agregar Nuevo Producto
+                  </button>
+                  <button onClick={() => setAdminTab('settings')}>
+                    ⚙️ Configuración (Logo, WhatsApp, etc)
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {adminTab !== 'menu' && (
+              <div className="admin-content-wrapper">
+                <div className="admin-top-nav">
+                  <button className="back-btn" onClick={() => setAdminTab('menu')}>&larr; Volver al Menú</button>
+                  <h3>{adminTab === 'products' ? 'Gestión de Productos' : adminTab === 'add' ? (editingProduct ? 'Editar Producto' : 'Nuevo Producto') : 'Configuración'}</h3>
+                </div>
+                
+                <div className="admin-content-scroll">
+                  {adminTab === 'products' && (
+                    <div className="admin-products-list">
+                      {products.length === 0 && <p style={{color: '#888'}}>No hay productos.</p>}
+                      {products.map(p => (
+                        <div key={p.id} className="admin-product-item">
+                          <img src={p.image} alt={p.name} />
+                          <div className="admin-product-info">
+                            <h4>{p.name}</h4>
+                            <p>{p.price}</p>
+                          </div>
+                          <div className="admin-product-actions">
+                            <button onClick={() => { setEditingProduct(p); setTempImageUrl(p.image); setAdminTab('add'); }} className="edit-btn"><Edit size={18} /></button>
+                            <button onClick={() => handleDeleteProduct(p.id)} className="del-btn"><Trash2 size={18} /></button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {adminTab === 'add' && (
+                    <form className="admin-form" onSubmit={handleSaveProduct}>
+                      <div className="form-group">
+                        <label>Nombre del Perfume</label>
+                        <input type="text" name="name" defaultValue={editingProduct?.name} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Precio (Ej: 180000)</label>
+                        <input type="number" name="priceRaw" defaultValue={editingProduct?.priceRaw} required />
+                      </div>
+                      <div className="form-group">
+                        <label>Categoría</label>
+                        <select name="category" defaultValue={editingProduct?.category || categories[0]}>
+                          {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Imagen del Producto</label>
+                        <div className="upload-container">
+                          {(tempImageUrl || editingProduct?.image) && (
+                            <img src={tempImageUrl || editingProduct?.image} alt="Preview" className="image-preview" />
+                          )}
+                          <label className="upload-btn">
+                            {isUploading ? 'Subiendo...' : <><UploadCloud size={20}/> Subir Imagen</>}
+                            <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, false)} disabled={isUploading} hidden />
+                          </label>
+                        </div>
+                      </div>
+                      <button type="submit" className="btn form-submit-btn" disabled={isUploading}>
+                        <Save size={18} /> {editingProduct ? 'Guardar Cambios' : 'Agregar a la Nube'}
+                      </button>
+                    </form>
+                  )}
+
+                  {adminTab === 'settings' && (
+                    <div className="admin-form">
+                      <div className="form-group">
+                        <label>Logotipo del Sitio</label>
+                        <div className="upload-container">
+                          <img src={siteLogo} alt="Logo Preview" className="image-preview" style={{width:'80px', height:'80px', objectFit:'contain'}} />
+                          <label className="upload-btn">
+                            {isUploading ? 'Actualizando...' : <><UploadCloud size={20}/> Subir Nuevo Logo</>}
+                            <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, true)} disabled={isUploading} hidden />
+                          </label>
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label>Número de WhatsApp</label>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <input type="text" defaultValue={phoneNumber} id="newPhoneInput" onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }} />
+                          <button type="button" className="btn" onClick={() => handleSavePhone((document.getElementById('newPhoneInput') as HTMLInputElement).value)}>Guardar</button>
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label>Categorías (Separadas por coma)</label>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <input type="text" defaultValue={categories.join(', ')} id="newCategoriesInput" />
+                          <button type="button" className="btn" onClick={() => handleSaveCategories((document.getElementById('newCategoriesInput') as HTMLInputElement).value)}>Guardar</button>
+                        </div>
+                      </div>
+                      <div className="form-group" style={{ marginTop: '2rem' }}>
+                        <label>Cambiar PIN de Acceso (4 dígitos)</label>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <input type="text" maxLength={4} placeholder="Nuevo PIN" id="newPinInput" onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }} />
+                          <button type="button" className="btn" onClick={() => {
+                              const input = document.getElementById('newPinInput') as HTMLInputElement;
+                              if (input.value.length === 4) { handleSavePin(input.value); input.value = ''; } 
+                              else alert('El PIN debe tener exactamente 4 dígitos.');
+                            }}>Actualizar PIN</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Cart Sidebar */}
       {isCartOpen && <div className="cart-overlay" onClick={() => setIsCartOpen(false)}></div>}
       <div className={`cart-sidebar ${isCartOpen ? 'open' : ''}`}>
         <div className="cart-header">
@@ -606,19 +593,6 @@ function App() {
           </div>
         )}
       </div>
-      
-      {/* Floating WhatsApp Button */}
-      <a 
-        href={`https://wa.me/${phoneNumber}?text=Hola,%20vengo%20de%20la%20página%20web%20y%20me%20gustaría%20hacer%20un%20pedido.`}
-        className="whatsapp-float" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        aria-label="Contact us on WhatsApp"
-      >
-        <svg viewBox="0 0 32 32" width="30" height="30" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-          <path d="M16.002 0C7.178 0 0 7.178 0 16c0 2.802.73 5.438 2.015 7.747L.31 29.897l6.32-1.658c2.247 1.155 4.764 1.8 7.373 1.8 8.824 0 16-7.176 16-16S24.825 0 16.002 0zm0 27.355c-2.33 0-4.52-.605-6.425-1.656l-.46-.255-4.773 1.252 1.272-4.653-.284-.45C4.248 19.68 3.593 17.89 3.593 16c0-6.84 5.566-12.408 12.41-12.408 6.842 0 12.408 5.568 12.408 12.408 0 6.84-5.566 12.407-12.41 12.407zM22.82 18.61c-.372-.186-2.203-1.088-2.545-1.213-.34-.123-.59-.185-.838.186-.248.373-.96 1.214-1.178 1.46-.217.25-.435.28-.807.094-2.12-.11-3.692-.938-4.995-2.607-.272-.346.26-.33.987-1.785.123-.248.06-.465-.03-.65-.094-.187-.838-2.022-1.15-2.766-.3-.725-.603-.627-.838-.638-.216-.01-.465-.01-.713-.01-.25 0-.65.093-.99.465-.342.373-1.304 1.274-1.304 3.104 0 1.832 1.335 3.6 1.52 3.848.187.25 2.625 4.007 6.362 5.623 2.146.924 3.01.996 4.015.84 1.155-.18 2.204-.9 2.513-1.772.31-.87.31-1.614.218-1.77-.094-.155-.342-.25-.714-.436z"/>
-        </svg>
-      </a>
     </>
   );
 }

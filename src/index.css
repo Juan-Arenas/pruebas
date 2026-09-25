@@ -3,7 +3,7 @@
 :root {
   --color-background: #000000;
   --color-foreground: #ffffff;
-  --color-button: #4facfe; /* Calmer, professional blue */
+  --color-button: #4facfe;
   --color-button-hover: #0088cc;
   --color-button-text: #ffffff;
   --color-border: #222222;
@@ -11,6 +11,19 @@
   --color-announcement: #4facfe;
   --color-announcement-text: #ffffff;
   --color-section-alt: #050505;
+}
+
+body.light-theme {
+  --color-background: #f0f0f5;
+  --color-foreground: #111111;
+  --color-button: #000000;
+  --color-button-hover: #333333;
+  --color-button-text: #ffffff;
+  --color-border: #cccccc;
+  --color-card-bg: #ffffff;
+  --color-announcement: #000000;
+  --color-announcement-text: #ffffff;
+  --color-section-alt: #ffffff;
 }
 
 * {
@@ -91,6 +104,22 @@ ul {
   display: flex;
   gap: 1.5rem;
   align-items: center;
+}
+
+.theme-toggle {
+  background: none;
+  border: none;
+  color: var(--color-foreground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  color: var(--color-button);
 }
 
 .header-icons svg {
@@ -974,4 +1003,103 @@ ul {
   margin-top: 1rem;
   justify-content: center;
   border-radius: 8px;
+}
+
+.admin-menu-view {
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.admin-menu-view h2 {
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+}
+
+.admin-menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-menu-buttons button {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-foreground);
+  padding: 1.2rem;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.admin-menu-buttons button:hover {
+  background: var(--color-button);
+  color: var(--color-button-text);
+  border-color: var(--color-button);
+  transform: translateY(-2px);
+}
+
+.admin-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.admin-top-nav {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--color-button);
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.admin-content-scroll {
+  padding: 2rem;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.upload-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.image-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+}
+
+.upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--color-card-bg);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.upload-btn:hover {
+  background: var(--color-button);
+  color: var(--color-button-text);
+  border-color: var(--color-button);
 }
