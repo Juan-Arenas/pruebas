@@ -17,7 +17,7 @@ type CartItem = Product & { quantity: number };
 
 function App() {
   // Theme State
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
 
   // DB State (Firebase Firestore)
   const [products, setProducts] = useState<Product[]>([]);
@@ -51,7 +51,7 @@ function App() {
 
   // Apply theme to body
   useEffect(() => {
-    document.body.className = theme === 'light' ? 'light-theme' : '';
+    document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
   }, [theme]);
 
   // Firebase Realtime Connection

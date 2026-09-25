@@ -1,19 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap');
 
 :root {
-  --color-background: #000000;
-  --color-foreground: #ffffff;
-  --color-button: #4facfe;
-  --color-button-hover: #0088cc;
-  --color-button-text: #ffffff;
-  --color-border: #222222;
-  --color-card-bg: #0a0a0a;
-  --color-announcement: #4facfe;
-  --color-announcement-text: #ffffff;
-  --color-section-alt: #050505;
-}
-
-body.light-theme {
   --color-background: #f0f0f5;
   --color-foreground: #111111;
   --color-button: #000000;
@@ -26,6 +13,19 @@ body.light-theme {
   --color-section-alt: #ffffff;
 }
 
+body.dark-theme {
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-button: #4facfe;
+  --color-button-hover: #0088cc;
+  --color-button-text: #ffffff;
+  --color-border: #222222;
+  --color-card-bg: #0a0a0a;
+  --color-announcement: #4facfe;
+  --color-announcement-text: #ffffff;
+  --color-section-alt: #050505;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -33,7 +33,7 @@ body.light-theme {
 }
 
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: var(--color-background);
   color: var(--color-foreground);
   line-height: 1.6;
@@ -42,7 +42,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Playfair Display', serif;
   font-weight: 600;
   letter-spacing: 0px;
 }
@@ -179,20 +179,29 @@ ul {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%), url('/banner.jpeg') center/cover no-repeat;
+  background: linear-gradient(to right, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%), url('/banner.jpeg') center/cover no-repeat;
   padding: 4rem;
   text-align: center;
   border-bottom: 1px solid var(--color-border);
 }
 
+body.dark-theme .image-banner {
+  background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%), url('/banner2.png') center/cover no-repeat;
+}
+
 .banner-content {
-  color: #fff;
+  color: var(--color-foreground);
   max-width: 800px;
+  text-shadow: 0 2px 10px rgba(255,255,255,0.8);
+}
+
+body.dark-theme .banner-content {
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
 }
 
 .banner-subtitle {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 4px;
   color: var(--color-button);
   margin-bottom: 1rem;
@@ -203,12 +212,12 @@ ul {
   font-size: 4rem;
   line-height: 1.1;
   margin-bottom: 1.5rem;
-  color: #fff;
+  color: var(--color-foreground);
 }
 
 .banner-description {
   font-size: 1.1rem;
-  color: #cccccc;
+  color: var(--color-foreground);
   margin-bottom: 2rem;
 }
 
@@ -866,6 +875,9 @@ ul {
 /* --- ADMIN DASHBOARD --- */
 .admin-dashboard {
   background: var(--color-background);
+  background-image: linear-gradient(to right, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.3) 100%), url('/banner.jpeg');
+  background-size: cover;
+  background-position: center;
   width: 95%;
   max-width: 900px;
   height: 90vh;
@@ -875,36 +887,27 @@ ul {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-.admin-header {
-  padding: 1.5rem 2rem;
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+body.dark-theme .admin-dashboard {
+  background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)), url('/banner2.png');
 }
 
-.admin-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-card-bg);
-}
-
-.admin-tabs button {
-  flex: 1;
-  padding: 1rem;
+.admin-close-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
   background: none;
   border: none;
-  color: #888;
-  font-weight: 600;
+  color: var(--color-foreground);
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  z-index: 10;
+  transition: color 0.2s;
 }
 
-.admin-tabs button.active {
+.admin-close-btn:hover {
   color: var(--color-button);
-  border-bottom-color: var(--color-button);
 }
 
 .admin-content {
