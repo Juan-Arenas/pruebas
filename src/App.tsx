@@ -1,4 +1,4 @@
-import { Search, ShoppingBag, User, Sparkles, Phone, MapPin, Instagram, CheckCircle2 } from 'lucide-react';
+import { Search, ShoppingBag, User, Sparkles, Phone, MapPin, CheckCircle2 } from 'lucide-react';
 import './index.css';
 
 function App() {
@@ -100,7 +100,9 @@ function App() {
               Nos especializamos en ofrecer perfumes originales de la más alta calidad, con envíos seguros a nivel nacional. Tu esencia, nuestra pasión.
             </p>
             <div className="social-links">
-              <a href="https://instagram.com/hermidaperfumes" target="_blank" rel="noreferrer"><Instagram size={20} /></a>
+              <a href="https://instagram.com/hermidaperfumes" target="_blank" rel="noreferrer">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              </a>
               <a href="https://tiktok.com/@hermida.perfumes" target="_blank" rel="noreferrer">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 15.68a6.34 6.34 0 0 0 6.27 6.36 6.34 6.34 0 0 0 6.33-6.33V8.53a8.17 8.17 0 0 0 4.79 1.54V6.62a4.91 4.91 0 0 1-2.8-.93Z"/></svg>
               </a>
