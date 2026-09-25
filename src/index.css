@@ -1,0 +1,334 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --color-background: #111111;
+  --color-foreground: #ffffff;
+  --color-button: #d4af37;
+  --color-button-text: #111111;
+  --color-border: #333333;
+  --color-announcement: #000000;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Bebas Neue', cursive;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+ul {
+  list-style: none;
+}
+
+.announcement-bar {
+  background-color: var(--color-announcement);
+  text-align: center;
+  padding: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 2rem;
+}
+
+.announcement-text {
+  flex: 1;
+  text-align: center;
+  color: var(--color-foreground);
+}
+
+.header {
+  background: var(--color-background);
+  padding: 1.5rem 2rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.header-search {
+  justify-self: start;
+  cursor: pointer;
+}
+
+.header-logo {
+  justify-self: center;
+}
+
+.header-logo img {
+  height: 80px;
+  object-fit: contain;
+  border-radius: 50%; /* Make it round like the screenshot */
+}
+
+.header-icons {
+  justify-self: end;
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.header-icons svg {
+  cursor: pointer;
+}
+
+.header-nav {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.header-nav a {
+  font-size: 0.85rem;
+  color: #e2e2e2;
+  letter-spacing: 1px;
+}
+
+.header-nav a:hover {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  color: #d4af37;
+}
+
+.image-banner {
+  position: relative;
+  height: 80vh;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  background: linear-gradient(to right, rgba(17,17,17,0.9) 0%, rgba(17,17,17,0.3) 100%), url('https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&q=80&w=1600') center/cover no-repeat;
+  padding: 4rem;
+}
+
+.banner-content {
+  color: #fff;
+  max-width: 800px;
+  text-align: left;
+}
+
+.banner-subtitle {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 4px;
+  color: #d4af37;
+  margin-bottom: 0.5rem;
+}
+
+.banner-title {
+  font-size: 8rem;
+  line-height: 1;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.banner-logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.banner-logo-wrapper img {
+  height: 60px;
+  border-radius: 4px;
+}
+
+.banner-logo-line {
+  height: 1px;
+  background-color: #d4af37;
+  flex: 1;
+  max-width: 200px;
+}
+
+.banner-description {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.2rem;
+  color: #e2e2e2;
+  margin-bottom: 2rem;
+}
+
+.btn {
+  display: inline-block;
+  background-color: var(--color-button);
+  color: var(--color-button-text);
+  padding: 1rem 2.5rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 2px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.btn:hover {
+  opacity: 0.8;
+}
+
+.featured-collection {
+  padding: 5rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.section-header h2 {
+  font-size: 2.5rem;
+  color: #d4af37;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.product-card {
+  text-align: center;
+  group: relative;
+}
+
+.product-image-wrapper {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  background-color: #1a1a1a;
+  border: 1px solid var(--color-border);
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+.product-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.product-price {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.footer {
+  background-color: #080808;
+  padding: 4rem 2rem;
+  text-align: center;
+  margin-top: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.secondary-banner {
+  position: relative;
+  height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1a1a1a;
+  margin-top: 4rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.secondary-banner-content {
+  text-align: center;
+  color: #fff;
+  z-index: 2;
+  padding: 2rem;
+}
+
+.secondary-banner-logo {
+  max-width: 300px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  margin-bottom: 2rem;
+  transition: transform 0.5s ease;
+}
+
+.secondary-banner-logo:hover {
+  transform: scale(1.05);
+}
+
+.secondary-banner-title {
+  font-size: 3rem;
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+  color: #d4af37;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 3rem;
+  text-align: left;
+}
+
+.footer-column h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #d4af37;
+}
+
+.footer-column ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.footer-column a {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.footer-column a:hover {
+  color: #d4af37;
+}
+
+.footer-bottom {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.8rem;
+  color: #777;
+}
