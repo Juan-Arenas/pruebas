@@ -60,6 +60,7 @@ function App() {
         <section className="featured-collection" id="catalogo">
           <div className="section-header">
             <h2>Catálogo Oficial</h2>
+            <p>Encuentra la fragancia perfecta que hable por ti</p>
           </div>
           <div className="product-grid">
             {products.map((product) => (
@@ -67,9 +68,11 @@ function App() {
                 <div className="product-image-wrapper">
                   <img src={product.image} alt={product.name} className="product-image" />
                 </div>
-                <h3 className="product-title">{product.name}</h3>
-                <p className="product-price">{product.price}</p>
-                <button className="add-to-cart-btn">Agregar al carrito</button>
+                <div className="product-info">
+                  <h3 className="product-title">{product.name}</h3>
+                  <p className="product-price">{product.price}</p>
+                  <button className="add-to-cart-btn">Agregar al carrito</button>
+                </div>
               </div>
             ))}
           </div>
@@ -78,12 +81,12 @@ function App() {
         <section className="secondary-banner" id="como-pedir">
           <div className="secondary-banner-content">
             <img src="/logo.jpg" alt="Hermida Perfumes Logo" className="secondary-banner-logo" />
-            <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', color: '#fff' }}>¿CÓMO HACER TU PEDIDO?</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '600px', margin: '0 auto', textAlign: 'left', background: '#111', padding: '2rem', borderRadius: '20px', border: '1px solid var(--color-border)' }}>
-              <p style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1.1rem' }}><CheckCircle2 color="var(--color-button)" /> 1. Agrega tus perfumes favoritos al carrito.</p>
-              <p style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1.1rem' }}><CheckCircle2 color="var(--color-button)" /> 2. Envíanos tu lista por WhatsApp.</p>
-              <p style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1.1rem' }}><CheckCircle2 color="var(--color-button)" /> 3. Confirma tus datos de envío (Nombre, Teléfono, Dirección).</p>
-              <p style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1.1rem' }}><CheckCircle2 color="var(--color-button)" /> 4. ¡Listo! Despachamos tu pedido de inmediato.</p>
+            <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#fff' }}>¿CÓMO HACER TU PEDIDO?</h2>
+            <div className="order-steps-container">
+              <p style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem', color: '#ccc' }}><CheckCircle2 size={20} color="var(--color-button)" /> 1. Agrega tus perfumes favoritos al carrito.</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem', color: '#ccc' }}><CheckCircle2 size={20} color="var(--color-button)" /> 2. Envíanos tu lista por WhatsApp.</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem', color: '#ccc' }}><CheckCircle2 size={20} color="var(--color-button)" /> 3. Confirma tus datos de envío (Nombre, Teléfono).</p>
+              <p style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem', color: '#ccc' }}><CheckCircle2 size={20} color="var(--color-button)" /> 4. ¡Listo! Despachamos tu pedido de inmediato.</p>
             </div>
             <a href="https://wa.me/573144679154" target="_blank" rel="noreferrer" className="btn" style={{ marginTop: '2rem' }}>
               Pedir por WhatsApp <Phone size={18} />
