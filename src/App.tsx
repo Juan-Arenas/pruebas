@@ -400,7 +400,7 @@ function App() {
         <section className="secondary-banner" id="como-pedir">
           <div className="secondary-banner-content">
             <img src={siteLogo} alt="Hermida Perfumes Logo" className="secondary-banner-logo" />
-            <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: '#fff' }}>¿CÓMO HACER TU PEDIDO?</h2>
+            <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: 'var(--color-foreground)' }}>¿CÓMO HACER TU PEDIDO?</h2>
             <div className="order-steps-container">
               <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 1. Agrega perfumes al carrito.</p>
               <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 2. Toca "Hacer pedido" en tu carrito.</p>
