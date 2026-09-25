@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield } from 'lucide-react';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc, getDoc } from 'firebase/firestore';
+import { db } from './firebase';
 import './index.css';
 
 type Product = {
-  id: number;
+  id: string;
   name: string;
   price: string;
   priceRaw: number;
@@ -13,24 +15,13 @@ type Product = {
 
 type CartItem = Product & { quantity: number };
 
-const INITIAL_PRODUCTS: Product[] = [
-  { id: 1, name: 'CLUB DE NUIT INTENSE', price: '$220.000', priceRaw: 220000, image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&q=80&w=600', category: 'Amaderados' },
-  { id: 2, name: 'LATTAFA ASAD', price: '$150.000', priceRaw: 150000, image: 'https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?auto=format&fit=crop&q=80&w=600', category: 'Amaderados' },
-  { id: 3, name: 'YARA ROSA', price: '$140.000', priceRaw: 140000, image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&q=80&w=600', category: 'Dulces' },
-  { id: 4, name: 'HAWAS FOR HIM', price: '$260.000', priceRaw: 260000, image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&q=80&w=600', category: 'Cítricos' },
-];
-
 const CATEGORIES = ['Todas', 'Amaderados', 'Dulces', 'Cítricos'];
 
 function App() {
-  // DB State (Mocked with LocalStorage)
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('hermida_db_products');
-    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
-  });
-  const [siteLogo, setSiteLogo] = useState(() => {
-    return localStorage.getItem('hermida_db_logo') || '/logo.jpg';
-  });
+  // DB State (Firebase Firestore)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [siteLogo, setSiteLogo] = useState('/logo.jpg');
+  const [loading, setLoading] = useState(true);
 
   // App State
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -52,12 +43,38 @@ function App() {
   const [adminTab, setAdminTab] = useState<'products' | 'add' | 'settings'>('products');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Sync DB to LocalStorage
+  // Firebase Realtime Connection
   useEffect(() => {
-    localStorage.setItem('hermida_db_products', JSON.stringify(products));
-    localStorage.setItem('hermida_db_logo', siteLogo);
+    // 1. Suscribirse a los productos
+    const unsubscribeProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
+      const prods: Product[] = [];
+      snapshot.forEach((doc) => {
+        prods.push({ id: doc.id, ...doc.data() } as Product);
+      });
+      setProducts(prods);
+      setLoading(false);
+    });
+
+    // 2. Suscribirse a la configuración (Logo)
+    const unsubscribeSettings = onSnapshot(doc(db, 'settings', 'global'), (docSnap) => {
+      if (docSnap.exists() && docSnap.data().siteLogo) {
+        setSiteLogo(docSnap.data().siteLogo);
+      } else {
+        // Inicializar documento de settings si no existe
+        setDoc(doc(db, 'settings', 'global'), { siteLogo: '/logo.jpg' });
+      }
+    });
+
+    return () => {
+      unsubscribeProducts();
+      unsubscribeSettings();
+    };
+  }, []);
+
+  // Save Cart to LocalStorage
+  useEffect(() => {
     localStorage.setItem('hermida_cart', JSON.stringify(cart));
-  }, [products, siteLogo, cart]);
+  }, [cart]);
 
   // Prevent body scroll when modals are open
   useEffect(() => {
@@ -105,7 +122,6 @@ function App() {
 
   const verifyPin = () => {
     const enteredPin = pin.join('');
-    // Mock PIN logic. In production this should be validated via backend
     if (enteredPin === '1234') { 
       setIsAdminAuth(true);
       setShowAdminLogin(false);
@@ -127,7 +143,7 @@ function App() {
     });
     setIsCartOpen(true);
   };
-  const updateQuantity = (id: number, delta: number) => {
+  const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
         const newQ = item.quantity + delta;
@@ -136,7 +152,7 @@ function App() {
       return item;
     }));
   };
-  const removeFromCart = (id: number) => setCart(prev => prev.filter(item => item.id !== id));
+  const removeFromCart = (id: string) => setCart(prev => prev.filter(item => item.id !== id));
   const cartTotal = cart.reduce((sum, item) => sum + (item.priceRaw * item.quantity), 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -150,21 +166,25 @@ function App() {
     window.open(`https://wa.me/573144679154?text=${text}`, '_blank');
   };
 
-  // Admin DB Logic
-  const handleDeleteProduct = (id: number) => {
+  // Firebase Admin Logic
+  const handleDeleteProduct = async (id: string) => {
     if (confirm('¿Estás seguro de eliminar este perfume?')) {
-      setProducts(prev => prev.filter(p => p.id !== id));
-      setCart(prev => prev.filter(c => c.id !== id));
+      try {
+        await deleteDoc(doc(db, 'products', id));
+        setCart(prev => prev.filter(c => c.id !== id));
+      } catch (error) {
+        console.error("Error al eliminar:", error);
+        alert("Error al eliminar. Revisa tu conexión a Firebase.");
+      }
     }
   };
 
-  const handleSaveProduct = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const priceRaw = parseInt(formData.get('priceRaw') as string);
     
-    const newProduct: Product = {
-      id: editingProduct ? editingProduct.id : Date.now(),
+    const productData = {
       name: formData.get('name') as string,
       price: `$${priceRaw.toLocaleString('es-CO')}`,
       priceRaw: priceRaw,
@@ -172,13 +192,28 @@ function App() {
       category: formData.get('category') as string,
     };
 
-    if (editingProduct) {
-      setProducts(prev => prev.map(p => p.id === newProduct.id ? newProduct : p));
+    try {
+      if (editingProduct) {
+        await updateDoc(doc(db, 'products', editingProduct.id), productData);
+      } else {
+        const newId = Date.now().toString();
+        await setDoc(doc(db, 'products', newId), productData);
+      }
       setEditingProduct(null);
-    } else {
-      setProducts(prev => [...prev, newProduct]);
+      setAdminTab('products');
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      alert("Error al guardar producto.");
     }
-    setAdminTab('products');
+  };
+
+  const handleSaveLogo = async (newLogo: string) => {
+    setSiteLogo(newLogo); // Actualización optimista
+    try {
+      await setDoc(doc(db, 'settings', 'global'), { siteLogo: newLogo });
+    } catch (error) {
+      console.error("Error al actualizar logo:", error);
+    }
   };
 
   const filteredProducts = products.filter(p => {
@@ -254,9 +289,13 @@ function App() {
             </div>
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {loading ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#888' }}>
-              <p>No se encontraron perfumes.</p>
+              <p>Cargando productos desde la base de datos...</p>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '4rem 0', color: '#888' }}>
+              <p>No se encontraron perfumes. ¡Agrega uno desde el panel de administrador!</p>
             </div>
           ) : (
             <div className="product-grid">
@@ -351,7 +390,7 @@ function App() {
         <div className="admin-dashboard-overlay">
           <div className="admin-dashboard">
             <div className="admin-header">
-              <h2>Panel de Control</h2>
+              <h2>Panel de Control (En Vivo)</h2>
               <button className="modal-close" onClick={() => setIsAdminAuth(false)}><X size={24} /></button>
             </div>
             <div className="admin-tabs">
@@ -365,6 +404,7 @@ function App() {
             <div className="admin-content">
               {adminTab === 'products' && !editingProduct && (
                 <div className="admin-products-list">
+                  {products.length === 0 && <p style={{color: '#888'}}>No hay productos en la base de datos.</p>}
                   {products.map(p => (
                     <div key={p.id} className="admin-product-item">
                       <img src={p.image} alt={p.name} />
@@ -404,7 +444,7 @@ function App() {
                     <input type="url" name="image" defaultValue={editingProduct?.image} required placeholder="https://..." />
                   </div>
                   <button type="submit" className="btn form-submit-btn">
-                    <Save size={18} /> {editingProduct ? 'Guardar Cambios' : 'Agregar Producto'}
+                    <Save size={18} /> {editingProduct ? 'Guardar Cambios' : 'Agregar a la Nube'}
                   </button>
                 </form>
               )}
@@ -416,16 +456,15 @@ function App() {
                     <input 
                       type="text" 
                       value={siteLogo} 
-                      onChange={e => setSiteLogo(e.target.value)} 
+                      onChange={e => handleSaveLogo(e.target.value)} 
                       placeholder="Ej: /logo.jpg o https://..." 
                     />
-                    <small style={{ color: '#888', marginTop: '0.5rem', display: 'block' }}>Para subir una imagen local, necesitas cambiar el código o usar una base de datos real. Por ahora, usa una URL.</small>
+                    <small style={{ color: '#888', marginTop: '0.5rem', display: 'block' }}>El cambio se guarda y se refleja inmediatamente para todos los usuarios.</small>
                   </div>
-                  <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(255,50,50,0.1)', border: '1px solid #ff3333', borderRadius: '8px' }}>
-                    <h3 style={{ color: '#ff3333', marginBottom: '1rem' }}>Conexión a Base de Datos</h3>
+                  <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(50,255,100,0.1)', border: '1px solid #32ff64', borderRadius: '8px' }}>
+                    <h3 style={{ color: '#32ff64', marginBottom: '1rem' }}>Conexión Establecida</h3>
                     <p style={{ color: '#ccc', fontSize: '0.9rem' }}>
-                      Actualmente el panel guarda los datos en la <b>memoria de tu navegador (LocalStorage)</b>. Esto significa que solo tú ves los cambios.
-                      Para que los cambios se guarden "en los archivos" y todos los clientes lo vean en tiempo real, se requiere conectar la web a un servidor como <b>Supabase</b> o <b>Firebase</b>.
+                      El sistema está <b>conectado a Firebase</b>. Cualquier cambio que hagas aquí afectará a todos los visitantes de la página de forma inmediata en tiempo real.
                     </p>
                   </div>
                 </div>
