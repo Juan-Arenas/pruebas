@@ -323,7 +323,7 @@ function App() {
                     <h3 className="product-title">{product.name}</h3>
                     <p className="product-price">{product.price}</p>
                     <button className="add-to-cart-btn" onClick={() => addToCart(product)}>
-                      Agregar al carrito
+                      <span>Agregar</span> <ShoppingBag size={14} />
                     </button>
                   </div>
                 </div>
