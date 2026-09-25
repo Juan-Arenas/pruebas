@@ -22,7 +22,7 @@ function App() {
   // DB State (Firebase Firestore)
   const [products, setProducts] = useState<Product[]>([]);
   const [siteLogo, setSiteLogo] = useState('/logo.jpg');
-  const [adminPin, setAdminPin] = useState('1234');
+  const [adminPin, setAdminPin] = useState('1907');
   const [phoneNumber, setPhoneNumber] = useState('573144679154');
   const [categories, setCategories] = useState(['Amaderados', 'Dulces', 'Cítricos']);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,7 @@ function App() {
       } else {
         setDoc(doc(db, 'settings', 'global'), { 
           siteLogo: '/logo.jpg', 
-          adminPin: '1234',
+          adminPin: '1907',
           phoneNumber: '573144679154',
           categories: ['Amaderados', 'Dulces', 'Cítricos']
         });
