@@ -5,7 +5,7 @@ import './index.css';
 type Product = {
   id: number;
   name: string;
-  price: number;
+  price: string;
   priceRaw: number;
   image: string;
   category: string;
