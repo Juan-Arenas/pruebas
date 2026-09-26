@@ -422,51 +422,31 @@ function App() {
       </main>
 
       <footer className="footer" id="contacto">
-        <div className="footer-content">
-          <div className="footer-column">
-            <h3 style={{ color: 'var(--color-button)' }}>HERMIDA PERFUMES</h3>
-            <p className="footer-text" style={{ fontSize: '1rem', lineHeight: '1.8', color: 'var(--color-foreground)', fontWeight: '500' }}>
-              Nos especializamos en ofrecer perfumes originales de la más alta calidad, con envíos seguros a nivel nacional.
-            </p>
-            <div className="social-links" style={{ marginTop: '1.5rem' }}>
-              <a href={`https://wa.me/${phoneNumber}`} className="social-btn whatsapp" target="_blank" rel="noopener noreferrer">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                WHATSAPP
-              </a>
-              {tiktokUrl && (
-                <a href={tiktokUrl} className="social-btn" target="_blank" rel="noopener noreferrer">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
-                  TIKTOK
-                </a>
-              )}
-              {instagramUrl && (
-                <a href={instagramUrl} className="social-btn" target="_blank" rel="noopener noreferrer">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                  INSTAGRAM
-                </a>
-              )}
-            </div>
-          </div>
-          <div className="footer-column">
-            <h3 style={{ color: 'var(--color-button)' }}>Contáctanos</h3>
-            <ul>
-              <li><a href={`https://wa.me/${phoneNumber}`}><Phone size={18} color="var(--color-button)" /> +{phoneNumber}</a></li>
-              <li><a href="#"><MapPin size={18} color="var(--color-button)" /> Envíos a todo Colombia</a></li>
-            </ul>
+        <div className="contact-card">
+          <img src={siteLogo} alt="Logo Hermida" className="contact-card-logo" />
+          <h3 className="contact-card-title">HERMIDA PERFUMES</h3>
+          <p className="contact-card-text">
+            Nos especializamos en ofrecer perfumes originales de la más alta calidad, con envíos seguros a nivel nacional.
+          </p>
+          <div className="contact-buttons-container">
+            <a href="https://instagram.com/hermida.perfumes" className="contact-btn instagram" target="_blank" rel="noopener noreferrer">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+              <span>@hermida.perfumes</span>
+            </a>
+            <a href="https://tiktok.com/@hermida.perfumes" className="contact-btn tiktok" target="_blank" rel="noopener noreferrer">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
+              <span>@hermida.perfumes</span>
+            </a>
+            <a href={`https://wa.me/${phoneNumber}?text=Hola,%20quisiera%20más%20información`} className="contact-btn whatsapp" target="_blank" rel="noopener noreferrer">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+              <span>WhatsApp: +{phoneNumber}</span>
+            </a>
           </div>
         </div>
-        <div className="footer-bottom" style={{ color: 'var(--color-foreground)' }}>© {new Date().getFullYear()} Hermida Perfumes. Todos los derechos reservados.</div>
+        <div className="footer-bottom" style={{ color: 'var(--color-foreground)', marginTop: '2rem' }}>© {new Date().getFullYear()} Hermida Perfumes. Todos los derechos reservados.</div>
       </footer>
 
-      {/* Floating WhatsApp Button */}
-      <a
-        href={`https://wa.me/${phoneNumber}?text=Hola,%20quisiera%20más%20información`}
-        className="whatsapp-float"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
-      </a>
+
 
       {/* Product Details Modal */}
       {selectedProductDetails && (
