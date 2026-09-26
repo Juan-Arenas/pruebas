@@ -38,14 +38,14 @@ function App() {
   const [selectedProductForSize, setSelectedProductForSize] = useState<Product | null>(null);
   const [activeCategory, setActiveCategory] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Admin State
   const [logoClicks, setLogoClicks] = useState(0);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [isAdminAuth, setIsAdminAuth] = useState(false);
   const [pin, setPin] = useState(['', '', '', '']);
   const pinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
-  
+
   // Admin Dashboard State
   const [adminTab, setAdminTab] = useState<'menu' | 'products' | 'add' | 'settings'>('menu');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -75,8 +75,8 @@ function App() {
         if (data.categories) setCategories(data.categories);
         if (data.announcements) setAnnouncements(data.announcements);
       } else {
-        setDoc(doc(db, 'settings', 'global'), { 
-          siteLogo: '/logo.jpg', 
+        setDoc(doc(db, 'settings', 'global'), {
+          siteLogo: '/logo.jpg',
           adminPin: '1907',
           phoneNumber: '573144679154',
           categories: ['Amaderados', 'Dulces', 'Cítricos'],
@@ -131,10 +131,10 @@ function App() {
 
   const verifyPin = () => {
     const enteredPin = pin.join('');
-    if (enteredPin === adminPin) { 
+    if (enteredPin === adminPin) {
       setIsAdminAuth(true);
       setShowAdminLogin(false);
-      setPin(['', '', '', '']); 
+      setPin(['', '', '', '']);
       setAdminTab('menu');
     } else {
       alert('PIN Incorrecto');
@@ -148,11 +148,11 @@ function App() {
       setSelectedProductForSize(product);
       return;
     }
-    
+
     const finalSize = size || '100ml';
     const finalId = `${product.id}-${finalSize}`;
     const finalName = `${product.name} (${finalSize})`;
-    
+
     setCart((prev) => {
       const existing = prev.find((item) => item.id === finalId);
       if (existing) {
@@ -160,7 +160,7 @@ function App() {
       }
       return [...prev, { ...product, id: finalId, name: finalName, quantity: 1 }];
     });
-    
+
     setSelectedProductForSize(null);
     setIsCartOpen(true);
   };
@@ -210,7 +210,7 @@ function App() {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          
+
           // Comprimir como JPEG al 70% de calidad
           const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
           resolve(dataUrl);
@@ -253,7 +253,7 @@ function App() {
     const formData = new FormData(e.currentTarget);
     const priceRaw = parseInt(formData.get('priceRaw') as string);
     const imgToSave = tempImageUrl || (editingProduct?.image || '');
-    
+
     if (!imgToSave) {
       alert("Debes subir una imagen para el producto.");
       return;
@@ -324,9 +324,9 @@ function App() {
     <>
       <div className="announcement-bar">
         <div className="announcement-scroll">
-          {announcements.map((ann, idx) => (
-            <span key={idx}>
-              {ann} {idx < announcements.length - 1 && <span className="dot">•</span>}
+          {Array(10).fill(announcements).flat().map((ann, idx) => (
+            <span key={idx} className="announcement-item">
+              {ann} <span className="dot">�</span>
             </span>
           ))}
         </div>
@@ -338,7 +338,7 @@ function App() {
             <img src={siteLogo} alt="Hermida Perfumes" className="logo-img" />
             <div className="logo-text">
               <h1 className="store-name">HERMIDA PERFUMES</h1>
-              <span className="tagline">La exclusividad hecha aroma ✨</span>
+              <span className="tagline">Elige Como Quieres Ser Recordado ✨</span>
             </div>
           </div>
 
@@ -367,13 +367,13 @@ function App() {
             <h2>Catálogo Oficial Hermida Perfumes</h2>
             <p>Explora nuestra colección completa de perfumería árabe, nicho y diseñador</p>
           </div>
-          
+
           <div className="catalog-controls">
             <div className="valen-search-bar">
               <Search size={20} className="valen-search-icon" />
-              <input 
-                type="text" 
-                placeholder="Buscar productos... (ej. Lattafa, Creed, Dulce)" 
+              <input
+                type="text"
+                placeholder="Buscar productos... (ej. Lattafa, Creed, Dulce)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="valen-search-input"
@@ -381,8 +381,8 @@ function App() {
             </div>
             <div className="categories-filter">
               {['Todas', ...categories].map(cat => (
-                <button 
-                  key={cat} 
+                <button
+                  key={cat}
                   className={`category-btn ${activeCategory === cat ? 'active' : ''}`}
                   onClick={() => setActiveCategory(cat)}
                 >
@@ -459,10 +459,10 @@ function App() {
       </footer>
 
       {/* Floating WhatsApp Button */}
-      <a 
-        href={`https://wa.me/${phoneNumber}?text=Hola,%20quisiera%20más%20información`} 
-        className="whatsapp-float" 
-        target="_blank" 
+      <a
+        href={`https://wa.me/${phoneNumber}?text=Hola,%20quisiera%20más%20información`}
+        className="whatsapp-float"
+        target="_blank"
         rel="noopener noreferrer"
       >
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
@@ -519,7 +519,7 @@ function App() {
         <div className="admin-dashboard-overlay">
           <div className="admin-dashboard">
             <button className="admin-close-btn" onClick={() => setIsAdminAuth(false)}><X size={28} /></button>
-            
+
             {adminTab === 'menu' && (
               <div className="admin-menu-view">
                 <h2>¿Qué cambios quieres realizar?</h2>
@@ -543,11 +543,11 @@ function App() {
                   <button className="back-btn" onClick={() => setAdminTab('menu')}>&larr; Volver al Menú</button>
                   <h3>{adminTab === 'products' ? 'Gestión de Productos' : adminTab === 'add' ? (editingProduct ? 'Editar Producto' : 'Nuevo Producto') : 'Configuración'}</h3>
                 </div>
-                
+
                 <div className="admin-content-scroll">
                   {adminTab === 'products' && (
                     <div className="admin-products-list">
-                      {products.length === 0 && <p style={{color: '#888'}}>No hay productos.</p>}
+                      {products.length === 0 && <p style={{ color: '#888' }}>No hay productos.</p>}
                       {products.map(p => (
                         <div key={p.id} className="admin-product-item">
                           <img src={p.image} alt={p.name} />
@@ -587,7 +587,7 @@ function App() {
                             <img src={tempImageUrl || editingProduct?.image} alt="Preview" className="image-preview" />
                           )}
                           <label className="upload-btn">
-                            {isUploading ? 'Subiendo...' : <><UploadCloud size={20}/> Subir Imagen</>}
+                            {isUploading ? 'Subiendo...' : <><UploadCloud size={20} /> Subir Imagen</>}
                             <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, false)} disabled={isUploading} hidden />
                           </label>
                         </div>
@@ -603,9 +603,9 @@ function App() {
                       <div className="form-group">
                         <label>Logotipo del Sitio</label>
                         <div className="upload-container">
-                          <img src={siteLogo} alt="Logo Preview" className="image-preview" style={{width:'80px', height:'80px', objectFit:'contain'}} />
+                          <img src={siteLogo} alt="Logo Preview" className="image-preview" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
                           <label className="upload-btn">
-                            {isUploading ? 'Actualizando...' : <><UploadCloud size={20}/> Subir Nuevo Logo</>}
+                            {isUploading ? 'Actualizando...' : <><UploadCloud size={20} /> Subir Nuevo Logo</>}
                             <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, true)} disabled={isUploading} hidden />
                           </label>
                         </div>
@@ -629,10 +629,10 @@ function App() {
                         <div style={{ display: 'flex', gap: '1rem' }}>
                           <input type="text" maxLength={4} placeholder="Nuevo PIN" id="newPinInput" onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }} />
                           <button type="button" className="btn" onClick={() => {
-                              const input = document.getElementById('newPinInput') as HTMLInputElement;
-                              if (input.value.length === 4) { handleSavePin(input.value); input.value = ''; } 
-                              else alert('El PIN debe tener exactamente 4 dígitos.');
-                            }}>Actualizar PIN</button>
+                            const input = document.getElementById('newPinInput') as HTMLInputElement;
+                            if (input.value.length === 4) { handleSavePin(input.value); input.value = ''; }
+                            else alert('El PIN debe tener exactamente 4 dígitos.');
+                          }}>Actualizar PIN</button>
                         </div>
                       </div>
                     </div>
@@ -652,7 +652,7 @@ function App() {
         </div>
         <div className="cart-items">
           {cart.length === 0 ? (
-             <div className="empty-cart"><ShoppingBag size={48} /><p>Tu carrito está vacío</p></div>
+            <div className="empty-cart"><ShoppingBag size={48} /><p>Tu carrito está vacío</p></div>
           ) : (
             cart.map(item => (
               <div key={item.id} className="cart-item">
@@ -685,3 +685,4 @@ function App() {
 }
 
 export default App;
+
