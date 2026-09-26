@@ -552,7 +552,7 @@ body.dark-theme .secondary-banner::after {
 }
 
 .footer-column a {
-  color: #888;
+  color: var(--color-foreground); font-weight: 500;
   display: flex;
   align-items: center;
   gap: 0.8rem;
@@ -594,7 +594,7 @@ body.dark-theme .secondary-banner::after {
   border-top: 1px solid var(--color-border);
   text-align: center;
   font-size: 0.85rem;
-  color: #555;
+  color: var(--color-foreground); font-weight: 500;
 }
 
 /* Floating WhatsApp Button */
@@ -909,12 +909,12 @@ body.dark-theme .secondary-banner::after {
 
 .admin-login-header h2 {
   font-size: 1.5rem;
-  color: #fff;
+  color: var(--color-foreground);
 }
 
 .admin-login-desc {
   font-size: 0.9rem;
-  color: #888;
+  color: var(--color-foreground);
   margin-bottom: 2rem;
 }
 
@@ -1213,6 +1213,7 @@ body.dark-theme .admin-dashboard {
   width: 35px;
   height: 35px;
 }
+
 
 
 
