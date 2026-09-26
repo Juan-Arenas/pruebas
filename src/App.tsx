@@ -11,7 +11,8 @@ type Product = {
   priceRaw: number;
   prices?: Record<string, number>;
   image: string;
-  category: string;
+  category?: string;
+  categories?: string[];
   promotion?: string;
   description?: string;
   status?: 'activo' | 'agotado';
