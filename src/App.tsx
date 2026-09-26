@@ -84,8 +84,8 @@ function App() {
           siteLogo: '/logo.jpg',
           adminPin: '1907',
           phoneNumber: '573144679154',
-          instagramUrl: '',
-          tiktokUrl: '',
+          instagramUrl: 'https://instagram.com/hermida.perfumes',
+          tiktokUrl: 'https://tiktok.com/@hermida.perfumes',
           categories: ['Amaderados', 'Dulces', 'Cítricos'],
           announcements: ['🚚 Envíos a toda Colombia 🇨🇴', '🛡️ Pagos 100% seguros', '⚡ Entregas rápidas y confiables']
         });
@@ -462,51 +462,51 @@ function App() {
       {/* Product Details Modal */}
       {selectedProductDetails && (
         <div className="modal-overlay" onClick={() => setSelectedProductDetails(null)}>
-          <div className="admin-login-modal text-center" style={{ maxWidth: '450px', width: '90%', padding: '2rem' }} onClick={e => e.stopPropagation()}>
-            <div className="admin-login-header" style={{ justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h3 style={{ color: 'var(--color-foreground)', margin: 0, fontSize: '1.5rem', fontFamily: "'Montserrat', sans-serif" }}>{selectedProductDetails.name}</h3>
-              <button className="modal-close" onClick={() => setSelectedProductDetails(null)} style={{ position: 'static' }}><X size={24} /></button>
-            </div>
-            
-            <img src={selectedProductDetails.image} alt={selectedProductDetails.name} style={{ width: '100%', height: '250px', objectFit: 'contain', borderRadius: '12px', marginBottom: '1rem', background: '#fff' }} />
-            
-            <p style={{ color: 'var(--color-button)', fontWeight: 'bold', fontSize: '1.3rem', marginBottom: '1rem' }}>
-              ${getPriceForSize(selectedProductDetails, selectedDetailsSize).toLocaleString('es-CO')}
-            </p>
-
-            {selectedProductDetails.description && (
-              <p style={{ color: 'var(--color-foreground)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
-                {selectedProductDetails.description}
-              </p>
-            )}
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              {['3ml', '5ml', '10ml', '100ml'].map(size => {
-                const hasPrice = selectedProductDetails.prices?.[size as keyof typeof selectedProductDetails.prices] || (size === '100ml' && selectedProductDetails.priceRaw);
-                if (!hasPrice) return null;
-                return (
-                  <button 
-                    key={size}
-                    className="btn" 
-                    style={{ background: selectedDetailsSize === size ? 'var(--color-button)' : 'var(--color-background)', color: selectedDetailsSize === size ? '#fff' : 'var(--color-foreground)', border: '1px solid var(--color-border)', justifyContent: 'center' }}
-                    onClick={() => setSelectedDetailsSize(size)}
-                  >
-                    {size}
-                  </button>
-                )
-              })}
-            </div>
-            
-            <button 
-              className="btn" 
-              style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1.1rem', opacity: selectedProductDetails.status === 'agotado' ? 0.5 : 1 }} 
-              onClick={() => {
-                addToCart(selectedProductDetails, selectedDetailsSize);
-              }}
-              disabled={selectedProductDetails.status === 'agotado'}
-            >
-              {selectedProductDetails.status === 'agotado' ? 'Agotado' : 'Añadir al carrito'} <ShoppingBag size={18} />
+          <div className="product-details-modal" onClick={e => e.stopPropagation()}>
+            <button className="product-modal-close" onClick={() => setSelectedProductDetails(null)}>
+              <X size={28} />
             </button>
+            
+            <div className="product-modal-image-col">
+              <img src={selectedProductDetails.image} alt={selectedProductDetails.name} />
+            </div>
+            
+            <div className="product-modal-info-col">
+              <h2 className="product-modal-title">{selectedProductDetails.name}</h2>
+              <div className="product-modal-price">
+                ${getPriceForSize(selectedProductDetails, selectedDetailsSize).toLocaleString('es-CO')}
+              </div>
+              
+              <div className="product-modal-desc">
+                {selectedProductDetails.description || 'Una fragancia excepcional que define tu presencia y elegancia.'}
+              </div>
+
+              <h4 style={{ marginBottom: '1rem', color: 'var(--color-foreground)', opacity: 0.8 }}>SELECCIONA EL TAMAÑO:</h4>
+              <div className="product-modal-sizes">
+                {['3ml', '5ml', '10ml', '100ml'].map(size => {
+                  const hasPrice = selectedProductDetails.prices?.[size as keyof typeof selectedProductDetails.prices] || (size === '100ml' && selectedProductDetails.priceRaw);
+                  if (!hasPrice) return null;
+                  return (
+                    <button 
+                      key={size}
+                      className={`size-btn ${selectedDetailsSize === size ? 'active' : ''}`}
+                      onClick={() => setSelectedDetailsSize(size)}
+                    >
+                      {size}
+                    </button>
+                  )
+                })}
+              </div>
+              
+              <button 
+                className="btn product-modal-add-btn"
+                style={{ opacity: selectedProductDetails.status === 'agotado' ? 0.5 : 1 }} 
+                onClick={() => { addToCart(selectedProductDetails, selectedDetailsSize); }}
+                disabled={selectedProductDetails.status === 'agotado'}
+              >
+                {selectedProductDetails.status === 'agotado' ? 'AGOTADO' : 'AÑADIR AL CARRITO'} <ShoppingBag size={18} />
+              </button>
+            </div>
           </div>
         </div>
       )}
