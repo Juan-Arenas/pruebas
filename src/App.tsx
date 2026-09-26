@@ -342,14 +342,6 @@ function App() {
       </header>
 
       <main>
-        <section className="image-banner">
-          <div className="banner-content">
-            <a href="#catalogo" className="btn banner-btn">
-              Explorar Catálogo <ShoppingBag size={18} />
-            </a>
-          </div>
-        </section>
-
         <section className="featured-collection" id="catalogo">
           <div className="section-header">
             <h2>Catálogo Oficial Hermida Perfumes</h2>
@@ -379,6 +371,10 @@ function App() {
               ))}
             </div>
           </div>
+
+          <p className="catalog-count-text">
+            Mostrando {filteredProducts.length} productos
+          </p>
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#888' }}>

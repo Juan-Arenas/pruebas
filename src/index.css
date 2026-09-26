@@ -195,55 +195,7 @@ body.dark-theme .announcement-bar {
 
 
 
-/* Image Banner */
-.image-banner {
-  position: relative;
-  height: 60vh;
-  display: flex;
-  align-items: flex-end; /* Move button to bottom so it doesn't overlap text */
-  justify-content: center;
-  background: url('/banner.jpeg') center/cover no-repeat;
-  padding: 4rem;
-  text-align: center;
-  border-bottom: 1px solid var(--color-border);
-}
-
-body.dark-theme .image-banner {
-  background: url('/banner2.png') center/cover no-repeat;
-}
-
-.banner-content {
-  color: var(--color-foreground);
-  max-width: 800px;
-  text-shadow: 0 2px 10px rgba(255,255,255,0.8);
-}
-
-body.dark-theme .banner-content {
-  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-}
-
-.banner-subtitle {
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 4px;
-  color: var(--color-button);
-  margin-bottom: 1rem;
-  text-transform: uppercase;
-}
-
-.banner-title {
-  font-size: 4rem;
-  line-height: 1.1;
-  margin-bottom: 1.5rem;
-  color: var(--color-foreground);
-}
-
-.banner-description {
-  font-size: 1.1rem;
-  color: var(--color-foreground);
-  margin-bottom: 2rem;
-}
-
+/* Button Defaults */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -262,23 +214,6 @@ body.dark-theme .banner-content {
 
 .btn:hover {
   background-color: var(--color-button-hover);
-}
-
-.banner-btn {
-  padding: 1rem 3rem;
-  border-radius: 50px;
-  background: var(--color-background);
-  color: var(--color-foreground);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  transition: all 0.3s ease;
-  margin-bottom: 2rem;
-}
-
-.banner-btn:hover {
-  background: var(--color-button);
-  color: var(--color-button-text);
-  transform: translateY(-3px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.6);
 }
 
 /* Catalog Section */
@@ -472,11 +407,30 @@ body.dark-theme .banner-content {
 
 /* Secondary Banner */
 .secondary-banner {
-  background-color: var(--color-section-alt);
-  padding: 4rem 2rem;
+  position: relative;
+  background: url('/banner.jpeg') center/cover no-repeat;
+  padding: 6rem 2rem;
   text-align: center;
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.dark-theme .secondary-banner {
+  background: url('/banner2.png') center/cover no-repeat;
+}
+
+.secondary-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255, 255, 255, 0.4); /* Light overlay so text is readable */
+}
+
+body.dark-theme .secondary-banner::before {
+  background: rgba(0, 0, 0, 0.6); /* Dark overlay */
 }
 
 .secondary-banner-content {
