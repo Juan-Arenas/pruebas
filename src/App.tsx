@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, Sun, Moon, UploadCloud, Info, Instagram } from 'lucide-react';
+import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, Sun, Moon, UploadCloud, Info } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import './index.css';
@@ -434,7 +434,7 @@ function App() {
             </p>
             <div className="social-links">
               <a href={`https://wa.me/${phoneNumber}`} target="_blank" rel="noopener noreferrer"><Phone size={18} /></a>
-              {instagramUrl && <a href={instagramUrl} target="_blank" rel="noopener noreferrer"><Instagram size={18} /></a>}
+              {instagramUrl && <a href={instagramUrl} target="_blank" rel="noopener noreferrer"><strong style={{fontFamily: 'sans-serif'}}>Instagram</strong></a>}
               {tiktokUrl && <a href={tiktokUrl} target="_blank" rel="noopener noreferrer"><strong style={{fontFamily: 'sans-serif'}}>TikTok</strong></a>}
             </div>
           </div>
