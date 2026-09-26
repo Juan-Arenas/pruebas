@@ -1,8 +1,9 @@
+@import url('https://fonts.cdnfonts.com/css/heroes-legend');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Poppins:wght@300;400;500;600;700&display=swap');
 
 :root {
   --color-background: #ffffff;
-  --color-foreground: #111111;
+  --color-foreground: #000000;
   --color-heading: #3a1542; /* Morado elegante */
   --color-button: #8a2be2; /* Morado neón oscuro llamativo */
   --color-button-hover: #7b21cc;
@@ -251,10 +252,7 @@ body.dark-theme .announcement-bar {
   text-transform: uppercase;
 }
 
-.section-header p {
-  color: #888;
-  font-size: 1rem;
-}
+.section-header p { color: var(--color-foreground); font-weight: 500; font-size: 1rem; }
 
 /* Catalog Controls */
 .catalog-controls {
@@ -299,9 +297,7 @@ body.dark-theme .announcement-bar {
   font-family: inherit;
 }
 
-.valen-search-input::placeholder {
-  color: #999999;
-}
+.valen-search-input::placeholder { color: var(--color-foreground); opacity: 0.6; }
 
 .categories-filter {
   display: flex;
@@ -438,18 +434,49 @@ body.dark-theme .announcement-bar {
 
 /* Secondary Banner */
 .secondary-banner {
-  background-color: var(--color-background);
+  position: relative;
+  background: url('/banner.jpeg') center/cover no-repeat;
+  background-attachment: fixed;
   padding: 6rem 2rem;
   text-align: center;
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+body.dark-theme .secondary-banner {
+  background: url('/banner2.png') center/cover no-repeat;
+  background-attachment: fixed;
+}
+
+.secondary-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  z-index: 0;
+}
+
+.secondary-banner-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.secondary-banner h2 {
+  color: #ffffff !important;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
 }
 
 .secondary-banner-logo {
   max-width: 120px;
   border-radius: 50%;
   margin-bottom: 1.5rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
 .order-steps-container {
@@ -459,11 +486,12 @@ body.dark-theme .announcement-bar {
   max-width: 600px;
   margin: 0 auto;
   text-align: left;
-  background: var(--color-card-bg);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
   padding: 2.5rem;
   border-radius: 20px;
-  border: 1px solid var(--color-border);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 .step-text {
@@ -471,8 +499,9 @@ body.dark-theme .announcement-bar {
   display: flex;
   align-items: center;
   gap: 1rem;
-  color: var(--color-foreground);
-  font-weight: 500;
+  color: #ffffff !important;
+  font-weight: 600;
+  text-shadow: 0 1px 5px rgba(0,0,0,0.8);
 }
 
 /* Footer */
@@ -1164,3 +1193,4 @@ body.dark-theme .admin-dashboard {
   width: 35px;
   height: 35px;
 }
+
