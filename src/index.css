@@ -21,7 +21,7 @@ body.dark-theme {
   --color-background: #0f0f11;
   --color-foreground: #ffffff;
   --color-heading: #d8b4e2; /* Morado claro para modo oscuro */
-  --color-button: #9932cc;
+  --color-button: #5500b3;
   --color-button-hover: #8a2be2;
   --color-button-text: #ffffff;
   --color-border: #222222;
@@ -1057,17 +1057,17 @@ body.dark-theme .secondary-banner::after {
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #ccc;
+  color: var(--color-foreground);
   font-weight: 500;
 }
 
-.form-group input, .form-group select {
+.form-group input, .form-group select, .form-group textarea {
   width: 100%;
   padding: 0.8rem 1rem;
   background: var(--color-card-bg);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  color: #fff;
+  color: var(--color-foreground);
   font-family: inherit;
 }
 
@@ -1118,13 +1118,13 @@ body.dark-theme .secondary-banner::after {
   transform: translateY(-2px);
 }
 
-.admin-content-wrapper {
+.admin-workspace {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.admin-top-nav {
+.admin-workspace-header {
   padding: 1.5rem;
   border-bottom: 1px solid var(--color-border);
   display: flex;

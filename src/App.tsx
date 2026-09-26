@@ -9,12 +9,7 @@ type Product = {
   name: string;
   price: string;
   priceRaw: number;
-  prices?: {
-    '3ml': number;
-    '5ml': number;
-    '10ml': number;
-    '100ml': number;
-  };
+  prices?: Record<string, number>;
   image: string;
   category: string;
   promotion?: string;
@@ -56,6 +51,7 @@ function App() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [tempImageUrl, setTempImageUrl] = useState('');
+  const [customPrices, setCustomPrices] = useState<{size: string, price: number}[]>([]);
 
   useEffect(() => {
     document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
@@ -132,10 +128,10 @@ function App() {
   };
 
   const getPriceForSize = (product: Product, size: string) => {
-    if (product.prices && product.prices[size as keyof typeof product.prices]) {
-      return product.prices[size as keyof typeof product.prices] as number;
+    if (product.prices && product.prices[size]) {
+      return product.prices[size];
     }
-    return product.priceRaw;
+    return product.priceRaw || 0;
   };
 
   const addToCart = (product: Product, size: string) => {
@@ -233,18 +229,15 @@ function App() {
       return;
     }
 
-    const basePrice = parseInt(formData.get('price100ml') as string) || 0;
+    const pricesObj: Record<string, number> = {};
+    customPrices.forEach(p => { if (p.size && p.price > 0) pricesObj[p.size] = p.price; });
+    const basePrice = customPrices.length > 0 ? customPrices[0].price : 0;
 
     const prodData = {
       name: formData.get('name'),
       price: `$${basePrice.toLocaleString('es-CO')}`,
       priceRaw: basePrice,
-      prices: {
-        '3ml': parseInt(formData.get('price3ml') as string) || 0,
-        '5ml': parseInt(formData.get('price5ml') as string) || 0,
-        '10ml': parseInt(formData.get('price10ml') as string) || 0,
-        '100ml': basePrice
-      },
+      prices: pricesObj,
       category: formData.get('category'),
       promotion: formData.get('promotion') || '',
       description: formData.get('description') || '',
@@ -496,10 +489,7 @@ function App() {
 
               <h4 style={{ marginBottom: '1rem', color: 'var(--color-foreground)', opacity: 0.8 }}>Elige tu tamaño</h4>
               <div className="product-modal-sizes">
-                {['3ml', '5ml', '10ml', '100ml'].map(size => {
-                  const hasPrice = selectedProductDetails.prices?.[size as keyof typeof selectedProductDetails.prices] || (size === '100ml' && selectedProductDetails.priceRaw);
-                  if (!hasPrice) return null;
-                  const price = size === '100ml' ? selectedProductDetails.priceRaw : (selectedProductDetails.prices?.[size as keyof typeof selectedProductDetails.prices] || 0);
+                {Object.entries(selectedProductDetails.prices && Object.keys(selectedProductDetails.prices).length > 0 ? selectedProductDetails.prices : { '100ml': selectedProductDetails.priceRaw || 0 }).map(([size, price]) => {
                   return (
                     <div 
                       key={size}
@@ -579,7 +569,7 @@ function App() {
               <div className="admin-menu-view">
                 <h2>¿Qué cambios quieres realizar?</h2>
                 <div className="admin-menu-grid">
-                  <button className="admin-menu-btn" onClick={() => setAdminTab('add')}>
+                  <button className="admin-menu-btn" onClick={() => { setEditingProduct(null); setCustomPrices([{size: '100ml', price: 0}]); setAdminTab('add'); }}>
                     <Plus size={32} /> <span>Agregar Producto</span>
                   </button>
                   <button className="admin-menu-btn" onClick={() => setAdminTab('products')}>
@@ -611,7 +601,7 @@ function App() {
                             <p>{p.price}</p>
                           </div>
                           <div className="admin-prod-actions">
-                            <button onClick={() => { setEditingProduct(p); setAdminTab('add'); }}><Edit size={18} /></button>
+                            <button onClick={() => { setEditingProduct(p); setCustomPrices(p.prices ? Object.entries(p.prices).map(([size, price]) => ({size, price})) : [{size: '100ml', price: p.priceRaw || 0}]); setAdminTab('add'); }}><Edit size={18} /></button>
                             <button onClick={() => handleDeleteProduct(p.id)} style={{color: '#ff3b3b'}}><Trash2 size={18} /></button>
                           </div>
                         </div>
@@ -643,23 +633,24 @@ function App() {
                         <textarea name="description" rows={3} defaultValue={editingProduct?.description}></textarea>
                       </div>
 
-                      <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <div className="form-group">
-                          <label>Precio Perfume (100ml)</label>
-                          <input name="price100ml" type="number" required defaultValue={editingProduct?.prices?.['100ml'] || editingProduct?.priceRaw} />
-                        </div>
-                        <div className="form-group">
-                          <label>Precio Decant 10ml</label>
-                          <input name="price10ml" type="number" defaultValue={editingProduct?.prices?.['10ml'] || ''} />
-                        </div>
-                        <div className="form-group">
-                          <label>Precio Decant 5ml</label>
-                          <input name="price5ml" type="number" defaultValue={editingProduct?.prices?.['5ml'] || ''} />
-                        </div>
-                        <div className="form-group">
-                          <label>Precio Decant 3ml</label>
-                          <input name="price3ml" type="number" defaultValue={editingProduct?.prices?.['3ml'] || ''} />
-                        </div>
+                      <div className="form-group">
+                        <label>Tamaños y Precios</label>
+                        {customPrices.map((cp, idx) => (
+                          <div key={idx} style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
+                            <input type="text" placeholder="Tamaño (ej. 50ml)" value={cp.size} onChange={e => {
+                              const newP = [...customPrices];
+                              newP[idx].size = e.target.value;
+                              setCustomPrices(newP);
+                            }} required />
+                            <input type="number" placeholder="Precio" value={cp.price || ''} onChange={e => {
+                              const newP = [...customPrices];
+                              newP[idx].price = parseInt(e.target.value) || 0;
+                              setCustomPrices(newP);
+                            }} required />
+                            <button type="button" onClick={() => setCustomPrices(customPrices.filter((_, i) => i !== idx))} style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', padding: '0 1rem' }}>X</button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => setCustomPrices([...customPrices, {size: '', price: 0}])} className="btn" style={{ marginTop: '0.5rem', padding: '0.5rem 1rem' }}>+ Agregar Tamaño</button>
                       </div>
 
                       <div className="form-group">
