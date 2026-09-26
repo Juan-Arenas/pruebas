@@ -247,7 +247,7 @@ body.dark-theme .announcement-bar {
 }
 
 .section-header h2 {
-  font-family: 'Montserrat', sans-serif; letter-spacing: -2.5px; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; letter-spacing: -3.5px; font-weight: 700;
   font-size: 2.8rem;
   color: var(--color-heading);
   margin-bottom: 0.5rem;
@@ -1195,6 +1195,7 @@ body.dark-theme .admin-dashboard {
   width: 35px;
   height: 35px;
 }
+
 
 
 
