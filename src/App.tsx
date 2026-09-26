@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, Sun, Moon, UploadCloud } from 'lucide-react';
+import { Search, ShoppingBag, User, Phone, MapPin, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, Sun, Moon, UploadCloud, Info, Instagram } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import './index.css';
@@ -9,55 +9,58 @@ type Product = {
   name: string;
   price: string;
   priceRaw: number;
+  prices?: {
+    '3ml': number;
+    '5ml': number;
+    '10ml': number;
+    '100ml': number;
+  };
   image: string;
   category: string;
   promotion?: string;
+  description?: string;
+  status?: 'activo' | 'agotado';
 };
 
-type CartItem = Product & { quantity: number };
+type CartItem = Product & { quantity: number; selectedSize: string };
 
 function App() {
-  // Theme State
   const [theme, setTheme] = useState('light');
-
-  // DB State (Firebase Firestore)
   const [products, setProducts] = useState<Product[]>([]);
   const [siteLogo, setSiteLogo] = useState('/logo.jpg');
   const [adminPin, setAdminPin] = useState('1907');
   const [phoneNumber, setPhoneNumber] = useState('573144679154');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [tiktokUrl, setTiktokUrl] = useState('');
   const [categories, setCategories] = useState(['Amaderados', 'Dulces', 'Cítricos']);
-  const [announcements, setAnnouncements] = useState(['✨ Envíos a toda Colombia 🇨🇴', '💖 Pagos seguros y envíos rápidos', '🛍️ Compra fácil y rápido']);
+  const [announcements, setAnnouncements] = useState(['🚚 Envíos a toda Colombia 🇨🇴', '🛡️ Pagos 100% seguros', '⚡ Entregas rápidas y confiables']);
   const [loading, setLoading] = useState(true);
 
-  // App State
   const [cart, setCart] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem('hermida_cart');
     return saved ? JSON.parse(saved) : [];
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [selectedProductForSize, setSelectedProductForSize] = useState<Product | null>(null);
+  const [selectedProductDetails, setSelectedProductDetails] = useState<Product | null>(null);
+  const [selectedDetailsSize, setSelectedDetailsSize] = useState<string>('100ml');
   const [activeCategory, setActiveCategory] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Admin State
   const [logoClicks, setLogoClicks] = useState(0);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [isAdminAuth, setIsAdminAuth] = useState(false);
   const [pin, setPin] = useState(['', '', '', '']);
   const pinRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
 
-  // Admin Dashboard State
   const [adminTab, setAdminTab] = useState<'menu' | 'products' | 'add' | 'settings'>('menu');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [tempImageUrl, setTempImageUrl] = useState('');
 
-  // Apply theme to body
   useEffect(() => {
     document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
   }, [theme]);
 
-  // Firebase Realtime Connection
   useEffect(() => {
     const unsubscribeProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
       const prods: Product[] = [];
@@ -72,6 +75,8 @@ function App() {
         if (data.siteLogo) setSiteLogo(data.siteLogo);
         if (data.adminPin) setAdminPin(data.adminPin);
         if (data.phoneNumber) setPhoneNumber(data.phoneNumber);
+        if (data.instagramUrl) setInstagramUrl(data.instagramUrl);
+        if (data.tiktokUrl) setTiktokUrl(data.tiktokUrl);
         if (data.categories) setCategories(data.categories);
         if (data.announcements) setAnnouncements(data.announcements);
       } else {
@@ -79,8 +84,10 @@ function App() {
           siteLogo: '/logo.jpg',
           adminPin: '1907',
           phoneNumber: '573144679154',
+          instagramUrl: '',
+          tiktokUrl: '',
           categories: ['Amaderados', 'Dulces', 'Cítricos'],
-          announcements: ['✨ Envíos a toda Colombia 🇨🇴', '💖 Pagos seguros y envíos rápidos', '🛍️ Compra fácil y rápido']
+          announcements: ['🚚 Envíos a toda Colombia 🇨🇴', '🛡️ Pagos 100% seguros', '⚡ Entregas rápidas y confiables']
         });
       }
     });
@@ -94,40 +101,21 @@ function App() {
   useEffect(() => localStorage.setItem('hermida_cart', JSON.stringify(cart)), [cart]);
 
   useEffect(() => {
-    if (showAdminLogin || isAdminAuth || isCartOpen) {
+    if (showAdminLogin || isAdminAuth || isCartOpen || selectedProductDetails) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [showAdminLogin, isAdminAuth, isCartOpen]);
+  }, [showAdminLogin, isAdminAuth, isCartOpen, selectedProductDetails]);
 
   useEffect(() => {
-    if (logoClicks >= 3) {
-      if (!isAdminAuth) {
-        setShowAdminLogin(true);
-        setPin(['', '', '', '']);
-      }
+    if (logoClicks >= 5) {
+      setShowAdminLogin(true);
       setLogoClicks(0);
     }
-    let timer: number;
-    if (logoClicks > 0) {
-      timer = window.setTimeout(() => setLogoClicks(0), 1000);
-    }
+    const timer = setTimeout(() => setLogoClicks(0), 3000);
     return () => clearTimeout(timer);
-  }, [logoClicks, isAdminAuth]);
-
-  const handlePinChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    const newPin = [...pin];
-    newPin[index] = value;
-    setPin(newPin);
-    if (value && index < 3) pinRefs[index + 1].current?.focus();
-  };
-
-  const handlePinKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !pin[index] && index > 0) pinRefs[index - 1].current?.focus();
-  };
+  }, [logoClicks]);
 
   const verifyPin = () => {
     const enteredPin = pin.join('');
@@ -143,27 +131,33 @@ function App() {
     }
   };
 
-  const addToCart = (product: Product, size?: string) => {
-    if (!size && selectedProductForSize === null) {
-      setSelectedProductForSize(product);
-      return;
+  const getPriceForSize = (product: Product, size: string) => {
+    if (product.prices && product.prices[size as keyof typeof product.prices]) {
+      return product.prices[size as keyof typeof product.prices] as number;
     }
+    return product.priceRaw;
+  };
 
+  const addToCart = (product: Product, size: string) => {
+    if (product.status === 'agotado') return;
+    
     const finalSize = size || '100ml';
     const finalId = `${product.id}-${finalSize}`;
     const finalName = `${product.name} (${finalSize})`;
-
+    const priceRaw = getPriceForSize(product, finalSize);
+    
     setCart((prev) => {
       const existing = prev.find((item) => item.id === finalId);
       if (existing) {
         return prev.map((item) => item.id === finalId ? { ...item, quantity: item.quantity + 1 } : item);
       }
-      return [...prev, { ...product, id: finalId, name: finalName, quantity: 1 }];
+      return [...prev, { ...product, id: finalId, name: finalName, priceRaw, price: `$${priceRaw.toLocaleString('es-CO')}`, quantity: 1, selectedSize: finalSize }];
     });
-
-    setSelectedProductForSize(null);
+    
+    setSelectedProductDetails(null);
     setIsCartOpen(true);
   };
+
   const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
@@ -173,145 +167,133 @@ function App() {
       return item;
     }));
   };
-  const removeFromCart = (id: string) => setCart(prev => prev.filter(item => item.id !== id));
+
+  const removeFromCart = (id: string) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  };
+
   const cartTotal = cart.reduce((sum, item) => sum + (item.priceRaw * item.quantity), 0);
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
-    let text = "Hola Hermida Perfumes, quiero hacer el siguiente pedido:%0A%0A";
+    let message = `*NUEVO PEDIDO - HERMIDA PERFUMES*%0A%0A`;
     cart.forEach(item => {
-      text += `🛍️ ${item.quantity}x ${item.name} - $${(item.priceRaw * item.quantity).toLocaleString('es-CO')}%0A`;
+      message += `▪️ ${item.quantity}x ${item.name} - $${(item.priceRaw * item.quantity).toLocaleString('es-CO')}%0A`;
     });
-    text += `%0A💰 *Total: $${cartTotal.toLocaleString('es-CO')}*`;
-    window.open(`https://wa.me/${phoneNumber}?text=${text}`, '_blank');
+    message += `%0A*TOTAL: $${cartTotal.toLocaleString('es-CO')}*%0A%0A`;
+    message += `Hola, me gustaría confirmar este pedido.`;
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
   };
 
-  // Compresión de imagen Base64
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, isLogo: boolean) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsUploading(true);
       const reader = new FileReader();
-      reader.readAsDataURL(file);
       reader.onload = (event) => {
         const img = new Image();
-        img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 600;
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
           let width = img.width;
           let height = img.height;
 
-          if (width > MAX_WIDTH) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
+          if (width > height) {
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+          } else {
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
           }
-
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-
-          // Comprimir como JPEG al 70% de calidad
           const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          resolve(dataUrl);
+          
+          if (isLogo) {
+            updateDoc(doc(db, 'settings', 'global'), { siteLogo: dataUrl }).then(() => setIsUploading(false));
+          } else {
+            setTempImageUrl(dataUrl);
+            setIsUploading(false);
+          }
         };
-        img.onerror = (e) => reject(e);
+        img.src = event.target?.result as string;
       };
-      reader.onerror = (e) => reject(e);
-    });
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isLogo = false) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploading(true);
-    try {
-      const base64Img = await compressImage(file);
-      if (isLogo) {
-        handleSaveLogo(base64Img);
-      } else {
-        setTempImageUrl(base64Img);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error al procesar la imagen. Intenta con otra.");
-    }
-    setIsUploading(false);
-  };
-
-  const handleDeleteProduct = async (id: string) => {
-    if (confirm('¿Estás seguro de eliminar este perfume?')) {
-      try {
-        await deleteDoc(doc(db, 'products', id));
-        setCart(prev => prev.filter(c => c.id !== id));
-      } catch (error) { console.error(error); }
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSaveProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const priceRaw = parseInt(formData.get('priceRaw') as string);
     const imgToSave = tempImageUrl || (editingProduct?.image || '');
-
+    
     if (!imgToSave) {
       alert("Debes subir una imagen para el producto.");
       return;
     }
 
-    const productData = {
-      name: formData.get('name') as string,
-      price: `$${priceRaw.toLocaleString('es-CO')}`,
-      priceRaw: priceRaw,
-      image: imgToSave,
-      category: formData.get('category') as string,
+    const basePrice = parseInt(formData.get('price100ml') as string) || 0;
+
+    const prodData = {
+      name: formData.get('name'),
+      price: `$${basePrice.toLocaleString('es-CO')}`,
+      priceRaw: basePrice,
+      prices: {
+        '3ml': parseInt(formData.get('price3ml') as string) || 0,
+        '5ml': parseInt(formData.get('price5ml') as string) || 0,
+        '10ml': parseInt(formData.get('price10ml') as string) || 0,
+        '100ml': basePrice
+      },
+      category: formData.get('category'),
+      promotion: formData.get('promotion') || '',
+      description: formData.get('description') || '',
+      status: formData.get('status') as 'activo' | 'agotado',
+      image: imgToSave
     };
 
     try {
       if (editingProduct) {
-        await updateDoc(doc(db, 'products', editingProduct.id), productData);
+        await updateDoc(doc(db, 'products', editingProduct.id), prodData);
       } else {
-        const newId = Date.now().toString();
-        await setDoc(doc(db, 'products', newId), productData);
+        const newRef = doc(collection(db, 'products'));
+        await setDoc(newRef, prodData);
       }
+      setAdminTab('products');
       setEditingProduct(null);
       setTempImageUrl('');
-      setAdminTab('products');
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      alert("Error al guardar producto");
+    }
   };
 
-  const handleSaveLogo = async (newLogo: string) => {
-    setSiteLogo(newLogo);
-    try {
-      await updateDoc(doc(db, 'settings', 'global'), { siteLogo: newLogo });
-      alert("Logo actualizado con éxito.");
-    } catch (error) { console.error(error); }
+  const handleDeleteProduct = async (id: string) => {
+    if (window.confirm('¿Seguro que deseas eliminar este producto?')) {
+      await deleteDoc(doc(db, 'products', id));
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const newCategories = (formData.get('categories') as string).split(',').map(s => s.trim()).filter(s => s);
+    const newAnns = (formData.get('announcements') as string).split(',').map(s => s.trim()).filter(s => s);
+    
+    await updateDoc(doc(db, 'settings', 'global'), {
+      phoneNumber: formData.get('phoneNumber'),
+      instagramUrl: formData.get('instagramUrl'),
+      tiktokUrl: formData.get('tiktokUrl'),
+      categories: newCategories,
+      announcements: newAnns
+    });
+    alert('Configuración guardada exitosamente');
   };
 
   const handleSavePin = async (newPin: string) => {
-    if (newPin.length !== 4 || !/^\d+$/.test(newPin)) return;
-    setAdminPin(newPin);
-    try {
+    if (newPin.length === 4) {
       await updateDoc(doc(db, 'settings', 'global'), { adminPin: newPin });
-      alert("PIN actualizado correctamente.");
-    } catch (error) { console.error(error); }
-  };
-
-  const handleSavePhone = async (newPhone: string) => {
-    setPhoneNumber(newPhone);
-    try {
-      await updateDoc(doc(db, 'settings', 'global'), { phoneNumber: newPhone });
-      alert("Teléfono actualizado.");
-    } catch (error) { console.error(error); }
-  };
-
-  const handleSaveCategories = async (catsString: string) => {
-    const newCats = catsString.split(',').map(c => c.trim()).filter(Boolean);
-    setCategories(newCats);
-    try {
-      await updateDoc(doc(db, 'settings', 'global'), { categories: newCats });
-      alert("Categorías actualizadas.");
-    } catch (error) { console.error(error); }
+      alert('PIN actualizado exitosamente');
+    }
   };
 
   const filteredProducts = products.filter(p => {
@@ -326,7 +308,7 @@ function App() {
         <div className="announcement-scroll">
           {Array(10).fill(announcements).flat().map((ann, idx) => (
             <span key={idx} className="announcement-item">
-              {ann} <span className="dot">�</span>
+              {ann} <span className="dot">•</span>
             </span>
           ))}
         </div>
@@ -354,8 +336,7 @@ function App() {
             </button>
             <User size={20} onClick={() => setShowAdminLogin(true)} style={{ cursor: 'pointer' }} />
             <button className="cart-btn-header" onClick={() => setIsCartOpen(true)}>
-              <ShoppingBag size={18} />
-              <span>Carrito {cartCount > 0 && <span className="cart-badge-inline">{cartCount}</span>}</span>
+              <ShoppingBag size={20} /> Carrito <span className="cart-badge-inline">{cart.length}</span>
             </button>
           </div>
         </div>
@@ -407,16 +388,21 @@ function App() {
           ) : (
             <div className="product-grid">
               {filteredProducts.map((product) => (
-                <div key={product.id} className="product-card">
+                <div key={product.id} className="product-card" onClick={() => { setSelectedProductDetails(product); setSelectedDetailsSize('100ml'); }}>
                   <div className="product-image-wrapper">
                     {product.promotion && <div className="product-promo-badge">{product.promotion}</div>}
+                    {product.status === 'agotado' && <div className="product-promo-badge" style={{ background: '#333' }}>AGOTADO</div>}
                     <img src={product.image} alt={product.name} className="product-image" />
                   </div>
                   <div className="product-info">
                     <h3 className="product-title">{product.name}</h3>
                     <p className="product-price">{product.price}</p>
-                    <button className="add-to-cart-btn" onClick={() => addToCart(product)}>
-                      <span>Agregar</span> <ShoppingBag size={14} />
+                    <button 
+                      className="add-to-cart-btn" 
+                      style={{ opacity: product.status === 'agotado' ? 0.5 : 1 }}
+                      onClick={(e) => { e.stopPropagation(); setSelectedProductDetails(product); setSelectedDetailsSize('100ml'); }}
+                    >
+                      <span>{product.status === 'agotado' ? 'Agotado' : 'Ver y Agregar'}</span> <Info size={14} />
                     </button>
                   </div>
                 </div>
@@ -430,10 +416,10 @@ function App() {
             <img src={siteLogo} alt="Hermida Perfumes Logo" className="secondary-banner-logo" />
             <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: 'var(--color-foreground)' }}>¿CÓMO HACER TU PEDIDO?</h2>
             <div className="order-steps-container">
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 1. Agrega perfumes al carrito.</p>
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 2. Toca "Hacer pedido" en tu carrito.</p>
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 3. Se enviará tu orden lista por WhatsApp.</p>
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 4. Despachamos de inmediato.</p>
+              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 1. Elige tu perfume y tamaño favorito.</p>
+              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 2. Agrégalo al carrito y ve a pagar.</p>
+              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 3. Se enviará tu orden directa a WhatsApp.</p>
+              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 4. Despachamos de inmediato a todo el país.</p>
             </div>
           </div>
         </section>
@@ -446,6 +432,11 @@ function App() {
             <p className="footer-text" style={{ fontSize: '1rem', lineHeight: '1.8', color: 'var(--color-foreground)', fontWeight: '500' }}>
               Nos especializamos en ofrecer perfumes originales de la más alta calidad, con envíos seguros a nivel nacional.
             </p>
+            <div className="social-links">
+              <a href={`https://wa.me/${phoneNumber}`} target="_blank" rel="noopener noreferrer"><Phone size={18} /></a>
+              {instagramUrl && <a href={instagramUrl} target="_blank" rel="noopener noreferrer"><Instagram size={18} /></a>}
+              {tiktokUrl && <a href={tiktokUrl} target="_blank" rel="noopener noreferrer"><strong style={{fontFamily: 'sans-serif'}}>TikTok</strong></a>}
+            </div>
           </div>
           <div className="footer-column">
             <h3 style={{ color: 'var(--color-button)' }}>Contáctanos</h3>
@@ -468,49 +459,95 @@ function App() {
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
       </a>
 
-      {/* Size Selection Modal */}
-      {selectedProductForSize && (
-        <div className="modal-overlay">
-          <div className="admin-login-modal text-center" style={{ maxWidth: '400px', width: '90%' }}>
-            <div className="admin-login-header" style={{ justifyContent: 'space-between' }}>
-              <h3 style={{ color: 'var(--color-foreground)', margin: 0 }}>Elige el tamaño</h3>
-              <button className="modal-close" onClick={() => setSelectedProductForSize(null)} style={{ position: 'static' }}><X size={20} /></button>
+      {/* Product Details Modal */}
+      {selectedProductDetails && (
+        <div className="modal-overlay" onClick={() => setSelectedProductDetails(null)}>
+          <div className="admin-login-modal text-center" style={{ maxWidth: '450px', width: '90%', padding: '2rem' }} onClick={e => e.stopPropagation()}>
+            <div className="admin-login-header" style={{ justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h3 style={{ color: 'var(--color-foreground)', margin: 0, fontSize: '1.5rem', fontFamily: "'Montserrat', sans-serif" }}>{selectedProductDetails.name}</h3>
+              <button className="modal-close" onClick={() => setSelectedProductDetails(null)} style={{ position: 'static' }}><X size={24} /></button>
             </div>
-            <p style={{ marginBottom: '1.5rem', color: 'var(--color-foreground)', fontSize: '0.95rem' }}>Selecciona la presentación que deseas llevar para <strong style={{ color: 'var(--color-button)' }}>{selectedProductForSize.name}</strong></p>
-            <div style={{ display: 'grid', gap: '10px' }}>
-              <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => addToCart(selectedProductForSize, '3ml')}>Decant 3ml</button>
-              <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => addToCart(selectedProductForSize, '5ml')}>Decant 5ml</button>
-              <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => addToCart(selectedProductForSize, '10ml')}>Decant 10ml</button>
-              <button className="btn" style={{ width: '100%', justifyContent: 'center', background: 'var(--color-foreground)', color: 'var(--color-background)' }} onClick={() => addToCart(selectedProductForSize, '100ml')}>Perfume Completo (100ml)</button>
+            
+            <img src={selectedProductDetails.image} alt={selectedProductDetails.name} style={{ width: '100%', height: '250px', objectFit: 'contain', borderRadius: '12px', marginBottom: '1rem', background: '#fff' }} />
+            
+            <p style={{ color: 'var(--color-button)', fontWeight: 'bold', fontSize: '1.3rem', marginBottom: '1rem' }}>
+              ${getPriceForSize(selectedProductDetails, selectedDetailsSize).toLocaleString('es-CO')}
+            </p>
+
+            {selectedProductDetails.description && (
+              <p style={{ color: 'var(--color-foreground)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
+                {selectedProductDetails.description}
+              </p>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              {['3ml', '5ml', '10ml', '100ml'].map(size => {
+                const hasPrice = selectedProductDetails.prices?.[size as keyof typeof selectedProductDetails.prices] || (size === '100ml' && selectedProductDetails.priceRaw);
+                if (!hasPrice) return null;
+                return (
+                  <button 
+                    key={size}
+                    className="btn" 
+                    style={{ background: selectedDetailsSize === size ? 'var(--color-button)' : 'var(--color-background)', color: selectedDetailsSize === size ? '#fff' : 'var(--color-foreground)', border: '1px solid var(--color-border)', justifyContent: 'center' }}
+                    onClick={() => setSelectedDetailsSize(size)}
+                  >
+                    {size}
+                  </button>
+                )
+              })}
             </div>
+            
+            <button 
+              className="btn" 
+              style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1.1rem', opacity: selectedProductDetails.status === 'agotado' ? 0.5 : 1 }} 
+              onClick={() => {
+                addToCart(selectedProductDetails, selectedDetailsSize);
+              }}
+              disabled={selectedProductDetails.status === 'agotado'}
+            >
+              {selectedProductDetails.status === 'agotado' ? 'Agotado' : 'Añadir al carrito'} <ShoppingBag size={18} />
+            </button>
           </div>
         </div>
       )}
 
+      {/* Admin Panel Setup */}
       {showAdminLogin && (
         <div className="modal-overlay">
           <div className="admin-login-modal">
             <button className="modal-close" onClick={() => setShowAdminLogin(false)}><X size={20} /></button>
             <div className="admin-login-header">
-              <Shield size={32} color="var(--color-button)" />
+              <Shield size={40} color="var(--color-button)" />
               <h2>Acceso Administrativo</h2>
             </div>
+            <p className="admin-login-desc">Ingresa el PIN de 4 dígitos para gestionar tu tienda.</p>
             <div className="pin-inputs">
-              {pin.map((digit, i) => (
+              {pin.map((digit, idx) => (
                 <input
-                  key={i}
-                  ref={pinRefs[i]}
+                  key={idx}
+                  ref={pinRefs[idx]}
                   type="password"
                   maxLength={1}
                   value={digit}
-                  onChange={e => handlePinChange(i, e.target.value)}
-                  onKeyDown={e => handlePinKeyDown(i, e)}
                   className="pin-box"
-                  autoComplete="off"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/[0-9]/.test(val) || val === '') {
+                      const newPin = [...pin];
+                      newPin[idx] = val;
+                      setPin(newPin);
+                      if (val && idx < 3) pinRefs[idx + 1].current?.focus();
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Backspace' && !pin[idx] && idx > 0) {
+                      pinRefs[idx - 1].current?.focus();
+                    }
+                  }}
                 />
               ))}
             </div>
-            <button className="btn admin-submit-btn" onClick={verifyPin}>Entrar</button>
+            <button className="btn admin-submit-btn" onClick={verifyPin}>Verificar PIN</button>
           </div>
         </div>
       )}
@@ -519,31 +556,31 @@ function App() {
         <div className="admin-dashboard-overlay">
           <div className="admin-dashboard">
             <button className="admin-close-btn" onClick={() => setIsAdminAuth(false)}><X size={28} /></button>
-
+            
             {adminTab === 'menu' && (
               <div className="admin-menu-view">
                 <h2>¿Qué cambios quieres realizar?</h2>
-                <div className="admin-menu-buttons">
-                  <button onClick={() => { setAdminTab('products'); setEditingProduct(null); }}>
-                    🛍️ Ver o Eliminar Productos
+                <div className="admin-menu-grid">
+                  <button className="admin-menu-btn" onClick={() => setAdminTab('add')}>
+                    <Plus size={32} /> <span>Agregar Producto</span>
                   </button>
-                  <button onClick={() => { setAdminTab('add'); setEditingProduct(null); setTempImageUrl(''); }}>
-                    ➕ Agregar Nuevo Producto
+                  <button className="admin-menu-btn" onClick={() => setAdminTab('products')}>
+                    <Edit size={32} /> <span>Editar Productos</span>
                   </button>
-                  <button onClick={() => setAdminTab('settings')}>
-                    ⚙️ Configuración (Logo, WhatsApp, etc)
+                  <button className="admin-menu-btn" onClick={() => setAdminTab('settings')}>
+                    <Save size={32} /> <span>Configuraciones Generales</span>
                   </button>
                 </div>
               </div>
             )}
 
             {adminTab !== 'menu' && (
-              <div className="admin-content-wrapper">
-                <div className="admin-top-nav">
+              <div className="admin-workspace">
+                <div className="admin-workspace-header">
                   <button className="back-btn" onClick={() => setAdminTab('menu')}>&larr; Volver al Menú</button>
                   <h3>{adminTab === 'products' ? 'Gestión de Productos' : adminTab === 'add' ? (editingProduct ? 'Editar Producto' : 'Nuevo Producto') : 'Configuración'}</h3>
                 </div>
-
+                
                 <div className="admin-content-scroll">
                   {adminTab === 'products' && (
                     <div className="admin-products-list">
@@ -551,13 +588,13 @@ function App() {
                       {products.map(p => (
                         <div key={p.id} className="admin-product-item">
                           <img src={p.image} alt={p.name} />
-                          <div className="admin-product-info">
+                          <div className="admin-prod-info">
                             <h4>{p.name}</h4>
                             <p>{p.price}</p>
                           </div>
-                          <div className="admin-product-actions">
-                            <button onClick={() => { setEditingProduct(p); setTempImageUrl(p.image); setAdminTab('add'); }} className="edit-btn"><Edit size={18} /></button>
-                            <button onClick={() => handleDeleteProduct(p.id)} className="del-btn"><Trash2 size={18} /></button>
+                          <div className="admin-prod-actions">
+                            <button onClick={() => { setEditingProduct(p); setAdminTab('add'); }}><Edit size={18} /></button>
+                            <button onClick={() => handleDeleteProduct(p.id)} style={{color: '#ff3b3b'}}><Trash2 size={18} /></button>
                           </div>
                         </div>
                       ))}
@@ -565,20 +602,51 @@ function App() {
                   )}
 
                   {adminTab === 'add' && (
-                    <form className="admin-form" onSubmit={handleSaveProduct}>
+                    <form onSubmit={handleSaveProduct} className="admin-form">
                       <div className="form-group">
                         <label>Nombre del Perfume</label>
-                        <input type="text" name="name" defaultValue={editingProduct?.name} required />
-                      </div>
-                      <div className="form-group">
-                        <label>Precio (Ej: 180000)</label>
-                        <input type="number" name="priceRaw" defaultValue={editingProduct?.priceRaw} required />
+                        <input name="name" required defaultValue={editingProduct?.name} />
                       </div>
                       <div className="form-group">
                         <label>Categoría</label>
-                        <select name="category" defaultValue={editingProduct?.category || categories[0]}>
-                          {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        <select name="category" required defaultValue={editingProduct?.category || categories[0]}>
+                          {categories.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Estado del producto</label>
+                        <select name="status" defaultValue={editingProduct?.status || 'activo'}>
+                          <option value="activo">Activo (Disponible)</option>
+                          <option value="agotado">Agotado</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Descripción y Notas (Opcional)</label>
+                        <textarea name="description" rows={3} defaultValue={editingProduct?.description}></textarea>
+                      </div>
+
+                      <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div className="form-group">
+                          <label>Precio Perfume (100ml)</label>
+                          <input name="price100ml" type="number" required defaultValue={editingProduct?.prices?.['100ml'] || editingProduct?.priceRaw} />
+                        </div>
+                        <div className="form-group">
+                          <label>Precio Decant 10ml</label>
+                          <input name="price10ml" type="number" defaultValue={editingProduct?.prices?.['10ml'] || ''} />
+                        </div>
+                        <div className="form-group">
+                          <label>Precio Decant 5ml</label>
+                          <input name="price5ml" type="number" defaultValue={editingProduct?.prices?.['5ml'] || ''} />
+                        </div>
+                        <div className="form-group">
+                          <label>Precio Decant 3ml</label>
+                          <input name="price3ml" type="number" defaultValue={editingProduct?.prices?.['3ml'] || ''} />
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Texto de Promoción (Ej: 30% OFF)</label>
+                        <input name="promotion" defaultValue={editingProduct?.promotion} placeholder="Dejar vacío si no hay promo" />
                       </div>
                       <div className="form-group">
                         <label>Imagen del Producto</label>
@@ -592,50 +660,71 @@ function App() {
                           </label>
                         </div>
                       </div>
-                      <button type="submit" className="btn form-submit-btn" disabled={isUploading}>
-                        <Save size={18} /> {editingProduct ? 'Guardar Cambios' : 'Agregar a la Nube'}
+                      <button type="submit" className="btn" style={{width: '100%', justifyContent: 'center'}} disabled={isUploading}>
+                        <Save size={18} /> {editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
                       </button>
                     </form>
                   )}
 
                   {adminTab === 'settings' && (
-                    <div className="admin-form">
-                      <div className="form-group">
-                        <label>Logotipo del Sitio</label>
-                        <div className="upload-container">
-                          <img src={siteLogo} alt="Logo Preview" className="image-preview" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
-                          <label className="upload-btn">
-                            {isUploading ? 'Actualizando...' : <><UploadCloud size={20} /> Subir Nuevo Logo</>}
-                            <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, true)} disabled={isUploading} hidden />
-                          </label>
+                    <form onSubmit={handleSaveSettings} className="admin-form">
+                      <div className="admin-settings-section">
+                        <h4 style={{marginBottom: '1rem', color: 'var(--color-button)'}}>Configuración de WhatsApp</h4>
+                        <div className="form-group">
+                          <label>Número de WhatsApp (con código de país ej: 57314...)</label>
+                          <input name="phoneNumber" required defaultValue={phoneNumber} />
+                        </div>
+                        <div className="form-group">
+                          <label>Instagram URL (Opcional)</label>
+                          <input name="instagramUrl" defaultValue={instagramUrl} placeholder="https://instagram.com/hermida..." />
+                        </div>
+                        <div className="form-group">
+                          <label>TikTok URL (Opcional)</label>
+                          <input name="tiktokUrl" defaultValue={tiktokUrl} placeholder="https://tiktok.com/@hermida..." />
                         </div>
                       </div>
-                      <div className="form-group">
-                        <label>Número de WhatsApp</label>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                          <input type="text" defaultValue={phoneNumber} id="newPhoneInput" onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }} />
-                          <button type="button" className="btn" onClick={() => handleSavePhone((document.getElementById('newPhoneInput') as HTMLInputElement).value)}>Guardar</button>
+
+                      <div className="admin-settings-section">
+                        <h4 style={{marginBottom: '1rem', color: 'var(--color-button)'}}>Diseño y Contenido</h4>
+                        <div className="form-group">
+                          <label>Categorías (separadas por coma)</label>
+                          <input name="categories" required defaultValue={categories.join(', ')} />
+                        </div>
+                        <div className="form-group">
+                          <label>Mensajes del Carrusel (separados por coma)</label>
+                          <input name="announcements" required defaultValue={announcements.join(', ')} />
+                        </div>
+                        <div className="form-group">
+                          <label>Logotipo del Sitio</label>
+                          <div className="upload-container">
+                            <img src={siteLogo} alt="Logo Preview" className="image-preview" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
+                            <label className="upload-btn">
+                              {isUploading ? 'Actualizando...' : <><UploadCloud size={20} /> Subir Nuevo Logo</>}
+                              <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, true)} disabled={isUploading} hidden />
+                            </label>
+                          </div>
                         </div>
                       </div>
-                      <div className="form-group">
-                        <label>Categorías (Separadas por coma)</label>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                          <input type="text" defaultValue={categories.join(', ')} id="newCategoriesInput" />
-                          <button type="button" className="btn" onClick={() => handleSaveCategories((document.getElementById('newCategoriesInput') as HTMLInputElement).value)}>Guardar</button>
+
+                      <div className="admin-settings-section" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem' }}>
+                        <h4 style={{marginBottom: '1rem', color: 'var(--color-button)'}}>Seguridad</h4>
+                        <div className="form-group">
+                          <label>Cambiar PIN de Admin (4 dígitos)</label>
+                          <div style={{ display: 'flex', gap: '1rem' }}>
+                            <input type="text" maxLength={4} placeholder="Nuevo PIN" id="newPinInput" onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }} />
+                            <button type="button" className="btn" onClick={() => {
+                              const input = document.getElementById('newPinInput') as HTMLInputElement;
+                              if (input.value.length === 4) { handleSavePin(input.value); input.value = ''; }
+                              else alert('El PIN debe tener exactamente 4 dígitos.');
+                            }}>Actualizar PIN</button>
+                          </div>
                         </div>
                       </div>
-                      <div className="form-group" style={{ marginTop: '2rem' }}>
-                        <label>Cambiar PIN de Acceso (4 dígitos)</label>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                          <input type="text" maxLength={4} placeholder="Nuevo PIN" id="newPinInput" onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }} />
-                          <button type="button" className="btn" onClick={() => {
-                            const input = document.getElementById('newPinInput') as HTMLInputElement;
-                            if (input.value.length === 4) { handleSavePin(input.value); input.value = ''; }
-                            else alert('El PIN debe tener exactamente 4 dígitos.');
-                          }}>Actualizar PIN</button>
-                        </div>
-                      </div>
-                    </div>
+
+                      <button type="submit" className="btn" style={{width: '100%', justifyContent: 'center', marginTop: '1rem'}}>
+                        <Save size={18} /> Guardar Configuración Global
+                      </button>
+                    </form>
                   )}
                 </div>
               </div>
@@ -644,45 +733,45 @@ function App() {
         </div>
       )}
 
-      {isCartOpen && <div className="cart-overlay" onClick={() => setIsCartOpen(false)}></div>}
-      <div className={`cart-sidebar ${isCartOpen ? 'open' : ''}`}>
-        <div className="cart-header">
-          <h2>Tu Carrito ({cartCount})</h2>
-          <button className="close-cart-btn" onClick={() => setIsCartOpen(false)}><X size={24} /></button>
-        </div>
-        <div className="cart-items">
-          {cart.length === 0 ? (
-            <div className="empty-cart"><ShoppingBag size={48} /><p>Tu carrito está vacío</p></div>
-          ) : (
-            cart.map(item => (
-              <div key={item.id} className="cart-item">
-                <img src={item.image} alt={item.name} className="cart-item-image" />
-                <div className="cart-item-details">
-                  <h4>{item.name}</h4>
-                  <p className="cart-item-price">${(item.priceRaw * item.quantity).toLocaleString('es-CO')}</p>
-                  <div className="cart-item-controls">
-                    <div className="quantity-controls">
-                      <button onClick={() => updateQuantity(item.id, -1)}><Minus size={14} /></button>
-                      <span>{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, 1)}><Plus size={14} /></button>
+      {isCartOpen && (
+        <div className="cart-sidebar open">
+          <div className="cart-header">
+            <h3>Tu Carrito ({cart.length})</h3>
+            <button className="close-cart-btn" onClick={() => setIsCartOpen(false)}><X size={24} color="var(--color-foreground)" /></button>
+          </div>
+          <div className="cart-items">
+            {cart.length === 0 ? (
+              <div className="empty-cart"><ShoppingBag size={48} /><p>Tu carrito está vacío</p></div>
+            ) : (
+              cart.map(item => (
+                <div key={item.id} className="cart-item">
+                  <img src={item.image} alt={item.name} className="cart-item-image" />
+                  <div className="cart-item-details">
+                    <h4 style={{ color: 'var(--color-foreground)' }}>{item.name}</h4>
+                    <span className="cart-item-price">${item.priceRaw.toLocaleString('es-CO')}</span>
+                    <div className="cart-item-controls">
+                      <div className="quantity-controls">
+                        <button onClick={() => updateQuantity(item.id, -1)}><Minus size={14} /></button>
+                        <span style={{ color: '#fff', fontSize: '0.9rem', width: '20px', textAlign: 'center' }}>{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.id, 1)}><Plus size={14} /></button>
+                      </div>
+                      <button className="remove-item-btn" onClick={() => removeFromCart(item.id)}><Trash2 size={16} /></button>
                     </div>
-                    <button className="remove-item-btn" onClick={() => removeFromCart(item.id)}><Trash2 size={16} /></button>
                   </div>
                 </div>
-              </div>
-            ))
+              ))
+            )}
+          </div>
+          {cart.length > 0 && (
+            <div className="cart-footer">
+              <div className="cart-total" style={{ color: 'var(--color-foreground)' }}><span>Total:</span><span>${cartTotal.toLocaleString('es-CO')}</span></div>
+              <button className="checkout-btn" onClick={handleCheckout}>Hacer Pedido por WhatsApp <Phone size={18} /></button>
+            </div>
           )}
         </div>
-        {cart.length > 0 && (
-          <div className="cart-footer">
-            <div className="cart-total"><span>Total:</span><span>${cartTotal.toLocaleString('es-CO')}</span></div>
-            <button className="checkout-btn" onClick={handleCheckout}>Hacer Pedido por WhatsApp <Phone size={18} /></button>
-          </div>
-        )}
-      </div>
+      )}
     </>
   );
 }
 
 export default App;
-
