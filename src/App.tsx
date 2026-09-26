@@ -304,28 +304,41 @@ function App() {
 
   return (
     <>
+      <div className="announcement-bar">
+        <span>✨ Envíos a toda Colombia 🇨🇴</span>
+        <span>•</span>
+        <span>💖 Pagos seguros y envíos rápidos</span>
+        <span>•</span>
+        <span>🛍️ Compra fácil y rápido</span>
+      </div>
+
       <header className="header">
-        <div className="header-top">
-          <div className="header-spacer"></div>
-          <div className="header-logo" onClick={() => setLogoClicks(c => c + 1)} style={{ cursor: 'pointer' }}>
-            <img src={siteLogo} alt="Hermida Perfumes" />
-          </div>
-          <div className="header-icons">
-            <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="theme-toggle">
-              {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
-            </button>
-            <User size={24} onClick={() => setShowAdminLogin(true)} style={{ cursor: 'pointer' }} />
-            <div className="cart-icon-wrapper" onClick={() => setIsCartOpen(true)}>
-              <ShoppingBag size={24} />
-              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+        <div className="header-container">
+          <div className="logo-section" onClick={() => setLogoClicks(c => c + 1)} style={{ cursor: 'pointer' }}>
+            <img src={siteLogo} alt="Hermida Perfumes" className="logo-img" />
+            <div className="logo-text">
+              <h1 className="store-name">HERMIDA PERFUMES</h1>
+              <span className="tagline">La exclusividad hecha aroma ✨</span>
             </div>
           </div>
+
+          <nav className="header-nav">
+            <a href="#catalogo" className="active">Catálogo</a>
+            <a href="#como-pedir">Cómo Pedir</a>
+            <a href="#contacto">Contacto</a>
+          </nav>
+
+          <div className="header-icons">
+            <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="theme-toggle" title="Cambiar tema">
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <User size={20} onClick={() => setShowAdminLogin(true)} style={{ cursor: 'pointer' }} />
+            <button className="cart-btn-header" onClick={() => setIsCartOpen(true)}>
+              <ShoppingBag size={18} />
+              <span>Carrito {cartCount > 0 && <span className="cart-badge-inline">{cartCount}</span>}</span>
+            </button>
+          </div>
         </div>
-        <nav className="header-nav">
-          <a href="#catalogo" className="active">Catálogo</a>
-          <a href="#como-pedir">Cómo Pedir</a>
-          <a href="#contacto">Contacto</a>
-        </nav>
       </header>
 
       <main>
@@ -339,18 +352,19 @@ function App() {
 
         <section className="featured-collection" id="catalogo">
           <div className="section-header">
-            <h2>Catálogo Oficial</h2>
-            <p>Encuentra la fragancia perfecta que hable por ti</p>
+            <h2>Catálogo Oficial Hermida Perfumes</h2>
+            <p>Explora nuestra colección completa de perfumería árabe, nicho y diseñador</p>
           </div>
           
           <div className="catalog-controls">
-            <div className="search-bar">
-              <Search size={20} className="search-icon" />
+            <div className="valen-search-bar">
+              <Search size={20} className="valen-search-icon" />
               <input 
                 type="text" 
-                placeholder="Buscar perfume..." 
+                placeholder="Buscar productos... (ej. Lattafa, Creed, Dulce)" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                className="valen-search-input"
               />
             </div>
             <div className="categories-filter">
