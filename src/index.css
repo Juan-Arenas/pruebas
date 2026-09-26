@@ -7,8 +7,8 @@
   --color-background: #ffffff;
   --color-foreground: #000000;
   --color-heading: #3a1542; /* Morado elegante */
-  --color-button: #8a2be2; /* Morado neón oscuro llamativo */
-  --color-button-hover: #7b21cc;
+  --color-button: #5500B3; /* Morado neón oscuro llamativo */
+  --color-button-hover: #3e008c;
   --color-button-text: #ffffff;
   --color-border: #f0f0f0;
   --color-card-bg: #ffffff;
@@ -1195,6 +1195,7 @@ body.dark-theme .admin-dashboard {
   width: 35px;
   height: 35px;
 }
+
 
 
 
