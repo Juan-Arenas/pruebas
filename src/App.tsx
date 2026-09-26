@@ -499,7 +499,7 @@ function App() {
                 {['3ml', '5ml', '10ml', '100ml'].map(size => {
                   const hasPrice = selectedProductDetails.prices?.[size as keyof typeof selectedProductDetails.prices] || (size === '100ml' && selectedProductDetails.priceRaw);
                   if (!hasPrice) return null;
-                  const price = size === '100ml' ? selectedProductDetails.priceRaw : selectedProductDetails.prices[size as keyof typeof selectedProductDetails.prices];
+                  const price = size === '100ml' ? selectedProductDetails.priceRaw : (selectedProductDetails.prices?.[size as keyof typeof selectedProductDetails.prices] || 0);
                   return (
                     <div 
                       key={size}
