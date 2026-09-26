@@ -1453,13 +1453,5 @@ body.dark-theme .product-modal-image-col {
     overflow-y: visible;
   }
 }
-  .product-modal-image-col {
-    padding: 1rem;
-    min-height: 250px;
-  }
-  .product-modal-info-col {
-    padding: 2rem 1.5rem;
-    overflow-y: visible;
-  }
-}
+
 
