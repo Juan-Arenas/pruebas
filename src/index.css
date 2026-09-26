@@ -438,8 +438,7 @@ body.dark-theme .announcement-bar {
 .secondary-banner {
   position: relative;
   background: url('/banner.jpeg') center/cover no-repeat;
-  background-attachment: fixed;
-  padding: 6rem 2rem;
+    padding: 6rem 2rem;
   text-align: center;
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
@@ -451,8 +450,7 @@ body.dark-theme .announcement-bar {
 
 body.dark-theme .secondary-banner {
   background: url('/banner2.png') center/cover no-repeat;
-  background-attachment: fixed;
-}
+  }
 
 .secondary-banner::before {
   content: '';
@@ -1195,6 +1193,7 @@ body.dark-theme .admin-dashboard {
   width: 35px;
   height: 35px;
 }
+
 
 
 
