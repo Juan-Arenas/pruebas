@@ -233,12 +233,14 @@ function App() {
     customPrices.forEach(p => { if (p.size && p.price > 0) pricesObj[p.size] = p.price; });
     const basePrice = customPrices.length > 0 ? customPrices[0].price : 0;
 
+    const selectedCats = formData.getAll('product_categories') as string[];
     const prodData = {
       name: formData.get('name'),
       price: `$${basePrice.toLocaleString('es-CO')}`,
       priceRaw: basePrice,
       prices: pricesObj,
-      category: formData.get('category'),
+      category: selectedCats.length > 0 ? selectedCats[0] : (formData.get('category') || ''),
+      categories: selectedCats,
       promotion: formData.get('promotion') || '',
       description: formData.get('description') || '',
       status: formData.get('status') as 'activo' | 'agotado',
@@ -290,7 +292,7 @@ function App() {
   };
 
   const filteredProducts = products.filter(p => {
-    const matchesCategory = activeCategory === 'Todas' || p.category === activeCategory;
+    const matchesCategory = activeCategory === 'Todas' || p.category === activeCategory || (p.categories && p.categories.includes(activeCategory));
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -616,10 +618,15 @@ function App() {
                         <input name="name" required defaultValue={editingProduct?.name} />
                       </div>
                       <div className="form-group">
-                        <label>Categoría</label>
-                        <select name="category" required defaultValue={editingProduct?.category || categories[0]}>
-                          {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
+                        <label>Categorías (Puedes seleccionar varias)</label>
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                          {categories.map(c => (
+                            <label key={c} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-foreground)', cursor: 'pointer', fontWeight: 'normal', margin: 0 }}>
+                              <input type="checkbox" name="product_categories" value={c} defaultChecked={editingProduct?.categories?.includes(c) || editingProduct?.category === c} style={{ width: 'auto' }} />
+                              {c}
+                            </label>
+                          ))}
+                        </div>
                       </div>
                       <div className="form-group">
                         <label>Estado del producto</label>
