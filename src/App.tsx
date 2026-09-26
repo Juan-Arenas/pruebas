@@ -338,7 +338,7 @@ function App() {
       <main>
         <section className="featured-collection" id="catalogo">
           <div className="section-header">
-            <h2>Nuestra Colección</h2>
+            <h2><span className="nuestra-text">Nuestra</span> <span className="coleccion-text">Colección ✨</span></h2>
             <p>Explora nuestra colección completa de perfumería árabe, nicho y diseñador</p>
           </div>
 

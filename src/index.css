@@ -257,6 +257,29 @@ body.dark-theme .announcement-bar {
 }
 
 .section-header h2 {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.nuestra-text {
+  font-family: 'Montserrat', sans-serif;
+  color: var(--color-foreground);
+  text-transform: uppercase;
+}
+
+.coleccion-text {
+  color: var(--color-button);
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0px;
+  text-shadow: 0 0 15px rgba(85, 0, 179, 0.4);
+}
+
+.section-header h2-old {
   font-family: 'Montserrat', sans-serif; letter-spacing: -1px; font-weight: 700;
   font-size: 2.8rem;
   color: var(--color-heading);
@@ -781,6 +804,7 @@ body.dark-theme .secondary-banner::after {
 
 /* Mobile Adjustments */
 @media (max-width: 768px) {
+  .section-header h2 { font-size: 2.2rem; }
   .header {
     padding: 1rem 1rem 0;
   }
