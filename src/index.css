@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&display=swap');
 @import url('https://fonts.cdnfonts.com/css/heroes-legend');
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Poppins:wght@300;400;500;600;700&display=swap');
 
@@ -245,7 +246,7 @@ body.dark-theme .announcement-bar {
 }
 
 .section-header h2 {
-  font-family: 'Heroes Legend', 'Outfit', sans-serif;
+  font-family: 'Cinzel', serif; letter-spacing: 3px; font-weight: 700;
   font-size: 2.8rem;
   color: var(--color-heading);
   margin-bottom: 0.5rem;
@@ -1193,4 +1194,5 @@ body.dark-theme .admin-dashboard {
   width: 35px;
   height: 35px;
 }
+
 
