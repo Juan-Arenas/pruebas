@@ -11,6 +11,7 @@ type Product = {
   priceRaw: number;
   image: string;
   category: string;
+  promotion?: string;
 };
 
 type CartItem = Product & { quantity: number };
@@ -25,6 +26,7 @@ function App() {
   const [adminPin, setAdminPin] = useState('1907');
   const [phoneNumber, setPhoneNumber] = useState('573144679154');
   const [categories, setCategories] = useState(['Amaderados', 'Dulces', 'Cítricos']);
+  const [announcements, setAnnouncements] = useState(['✨ Envíos a toda Colombia 🇨🇴', '💖 Pagos seguros y envíos rápidos', '🛍️ Compra fácil y rápido']);
   const [loading, setLoading] = useState(true);
 
   // App State
@@ -33,6 +35,7 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [selectedProductForSize, setSelectedProductForSize] = useState<Product | null>(null);
   const [activeCategory, setActiveCategory] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -70,12 +73,14 @@ function App() {
         if (data.adminPin) setAdminPin(data.adminPin);
         if (data.phoneNumber) setPhoneNumber(data.phoneNumber);
         if (data.categories) setCategories(data.categories);
+        if (data.announcements) setAnnouncements(data.announcements);
       } else {
         setDoc(doc(db, 'settings', 'global'), { 
           siteLogo: '/logo.jpg', 
           adminPin: '1907',
           phoneNumber: '573144679154',
-          categories: ['Amaderados', 'Dulces', 'Cítricos']
+          categories: ['Amaderados', 'Dulces', 'Cítricos'],
+          announcements: ['✨ Envíos a toda Colombia 🇨🇴', '💖 Pagos seguros y envíos rápidos', '🛍️ Compra fácil y rápido']
         });
       }
     });
@@ -138,12 +143,25 @@ function App() {
     }
   };
 
-  const addToCart = (product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      return [...prev, { ...product, quantity: 1 }];
+  const addToCart = (product: Product, size?: string) => {
+    if (!size && selectedProductForSize === null) {
+      setSelectedProductForSize(product);
+      return;
+    }
+    
+    const finalSize = size || '100ml';
+    const finalId = `${product.id}-${finalSize}`;
+    const finalName = `${product.name} (${finalSize})`;
+    
+    setCart((prev) => {
+      const existing = prev.find((item) => item.id === finalId);
+      if (existing) {
+        return prev.map((item) => item.id === finalId ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { ...product, id: finalId, name: finalName, quantity: 1 }];
     });
+    
+    setSelectedProductForSize(null);
     setIsCartOpen(true);
   };
   const updateQuantity = (id: string, delta: number) => {
@@ -305,11 +323,13 @@ function App() {
   return (
     <>
       <div className="announcement-bar">
-        <span>✨ Envíos a toda Colombia 🇨🇴</span>
-        <span>•</span>
-        <span>💖 Pagos seguros y envíos rápidos</span>
-        <span>•</span>
-        <span>🛍️ Compra fácil y rápido</span>
+        <div className="announcement-scroll">
+          {announcements.map((ann, idx) => (
+            <span key={idx}>
+              {ann} {idx < announcements.length - 1 && <span className="dot">•</span>}
+            </span>
+          ))}
+        </div>
       </div>
 
       <header className="header">
@@ -389,6 +409,7 @@ function App() {
               {filteredProducts.map((product) => (
                 <div key={product.id} className="product-card">
                   <div className="product-image-wrapper">
+                    {product.promotion && <div className="product-promo-badge">{product.promotion}</div>}
                     <img src={product.image} alt={product.name} className="product-image" />
                   </div>
                   <div className="product-info">
@@ -421,21 +442,50 @@ function App() {
       <footer className="footer" id="contacto">
         <div className="footer-content">
           <div className="footer-column">
-            <h3>HERMIDA PERFUMES</h3>
-            <p style={{ fontSize: '1rem', color: '#aaa', lineHeight: '1.8' }}>
+            <h3 style={{ color: 'var(--color-button)' }}>HERMIDA PERFUMES</h3>
+            <p className="footer-text" style={{ fontSize: '1rem', lineHeight: '1.8', color: 'var(--color-foreground)', fontWeight: '500' }}>
               Nos especializamos en ofrecer perfumes originales de la más alta calidad, con envíos seguros a nivel nacional.
             </p>
           </div>
           <div className="footer-column">
-            <h3>Contáctanos</h3>
+            <h3 style={{ color: 'var(--color-button)' }}>Contáctanos</h3>
             <ul>
               <li><a href={`https://wa.me/${phoneNumber}`}><Phone size={18} color="var(--color-button)" /> +{phoneNumber}</a></li>
               <li><a href="#"><MapPin size={18} color="var(--color-button)" /> Envíos a todo Colombia</a></li>
             </ul>
           </div>
         </div>
-        <div className="footer-bottom">© {new Date().getFullYear()} Hermida Perfumes. Todos los derechos reservados.</div>
+        <div className="footer-bottom" style={{ color: 'var(--color-foreground)' }}>© {new Date().getFullYear()} Hermida Perfumes. Todos los derechos reservados.</div>
       </footer>
+
+      {/* Floating WhatsApp Button */}
+      <a 
+        href={`https://wa.me/${phoneNumber}?text=Hola,%20quisiera%20más%20información`} 
+        className="whatsapp-float" 
+        target="_blank" 
+        rel="noopener noreferrer"
+      >
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
+      </a>
+
+      {/* Size Selection Modal */}
+      {selectedProductForSize && (
+        <div className="modal-overlay">
+          <div className="admin-login-modal text-center" style={{ maxWidth: '400px', width: '90%' }}>
+            <div className="admin-login-header" style={{ justifyContent: 'space-between' }}>
+              <h3 style={{ color: 'var(--color-foreground)', margin: 0 }}>Elige el tamaño</h3>
+              <button className="modal-close" onClick={() => setSelectedProductForSize(null)} style={{ position: 'static' }}><X size={20} /></button>
+            </div>
+            <p style={{ marginBottom: '1.5rem', color: 'var(--color-foreground)', fontSize: '0.95rem' }}>Selecciona la presentación que deseas llevar para <strong style={{ color: 'var(--color-button)' }}>{selectedProductForSize.name}</strong></p>
+            <div style={{ display: 'grid', gap: '10px' }}>
+              <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => addToCart(selectedProductForSize, '3ml')}>Decant 3ml</button>
+              <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => addToCart(selectedProductForSize, '5ml')}>Decant 5ml</button>
+              <button className="btn" style={{ width: '100%', justifyContent: 'center' }} onClick={() => addToCart(selectedProductForSize, '10ml')}>Decant 10ml</button>
+              <button className="btn" style={{ width: '100%', justifyContent: 'center', background: 'var(--color-foreground)', color: 'var(--color-background)' }} onClick={() => addToCart(selectedProductForSize, '100ml')}>Perfume Completo (100ml)</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAdminLogin && (
         <div className="modal-overlay">

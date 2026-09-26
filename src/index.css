@@ -2,10 +2,10 @@
 
 :root {
   --color-background: #ffffff;
-  --color-foreground: #333333;
-  --color-heading: #46284f; /* Morado elegante */
-  --color-button: #7c3aed; /* Morado vibrante */
-  --color-button-hover: #6d28d9;
+  --color-foreground: #111111;
+  --color-heading: #3a1542; /* Morado elegante */
+  --color-button: #8a2be2; /* Morado neón oscuro llamativo */
+  --color-button-hover: #7b21cc;
   --color-button-text: #ffffff;
   --color-border: #f0f0f0;
   --color-card-bg: #ffffff;
@@ -16,10 +16,10 @@
 
 body.dark-theme {
   --color-background: #0f0f11;
-  --color-foreground: #e0e0e0;
+  --color-foreground: #ffffff;
   --color-heading: #d8b4e2; /* Morado claro para modo oscuro */
-  --color-button: #8b5cf6;
-  --color-button-hover: #7c3aed;
+  --color-button: #9932cc;
+  --color-button-hover: #8a2be2;
   --color-button-text: #ffffff;
   --color-border: #222222;
   --color-card-bg: #161618;
@@ -64,22 +64,36 @@ ul {
 
 /* Announcement Bar */
 .announcement-bar {
-  background-color: #ffe6f2;
-  color: var(--color-heading);
+  background-color: var(--color-button);
+  color: #ffffff;
   text-align: center;
   padding: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
 }
 
 body.dark-theme .announcement-bar {
   background-color: #2a1027;
-  color: var(--color-heading);
+  color: var(--color-button);
+}
+
+.announcement-scroll {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scrollText 20s linear infinite;
+}
+
+.announcement-scroll span.dot {
+  margin: 0 2rem;
+  opacity: 0.6;
+}
+
+@keyframes scrollText {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-100%); }
 }
 
 /* Header */
@@ -230,9 +244,11 @@ body.dark-theme .announcement-bar {
 }
 
 .section-header h2 {
-  font-size: 2.5rem;
-  color: var(--color-foreground);
+  font-family: 'Heroes Legend', 'Outfit', sans-serif;
+  font-size: 2.8rem;
+  color: var(--color-heading);
   margin-bottom: 0.5rem;
+  text-transform: uppercase;
 }
 
 .section-header p {
@@ -347,6 +363,21 @@ body.dark-theme .announcement-bar {
   background-color: var(--color-background);
 }
 
+.product-promo-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff3b3b;
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  z-index: 10;
+  box-shadow: 0 4px 10px rgba(255,59,59,0.3);
+  text-transform: uppercase;
+}
+
 .product-image {
   width: 100%;
   height: 100%;
@@ -407,55 +438,41 @@ body.dark-theme .announcement-bar {
 
 /* Secondary Banner */
 .secondary-banner {
-  position: relative;
-  background: url('/banner.jpeg') center/cover no-repeat;
+  background-color: var(--color-background);
   padding: 6rem 2rem;
   text-align: center;
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-body.dark-theme .secondary-banner {
-  background: url('/banner2.png') center/cover no-repeat;
-}
-
-.secondary-banner::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(255, 255, 255, 0.4); /* Light overlay so text is readable */
-}
-
-body.dark-theme .secondary-banner::before {
-  background: rgba(0, 0, 0, 0.6); /* Dark overlay */
-}
-
-.secondary-banner-content {
-  position: relative;
-  z-index: 1;
 }
 
 .secondary-banner-logo {
-  max-width: 150px;
+  max-width: 120px;
   border-radius: 50%;
   margin-bottom: 1.5rem;
-  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .order-steps-container {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 1.5rem;
   max-width: 600px;
   margin: 0 auto;
   text-align: left;
   background: var(--color-card-bg);
-  padding: 2rem;
-  border-radius: 12px;
+  padding: 2.5rem;
+  border-radius: 20px;
   border: 1px solid var(--color-border);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.step-text {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--color-foreground);
+  font-weight: 500;
 }
 
 /* Footer */
@@ -817,6 +834,7 @@ body.dark-theme .secondary-banner::before {
   max-width: 400px;
   width: 90%;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  color: var(--color-foreground);
 }
 
 .modal-close {
@@ -1115,4 +1133,34 @@ body.dark-theme .admin-dashboard {
   background: var(--color-button);
   color: var(--color-button-text);
   border-color: var(--color-button);
+}
+
+/* Floating WhatsApp Button */
+.whatsapp-float {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  width: 60px;
+  height: 60px;
+  background-color: #25d366;
+  color: #FFF;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 30px;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.6);
+}
+
+.whatsapp-float img {
+  width: 35px;
+  height: 35px;
 }
