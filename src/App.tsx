@@ -419,6 +419,39 @@ function App() {
             </div>
           </div>
         </section>
+
+        <section className="decants-section">
+          <div className="decants-content">
+            <h2>¿QUIERES PROBARLO ANTES?</h2>
+            <h3>Decants de 5 ml y 10 ml.</h3>
+            <p>Son ideales para conocer una fragancia en tu piel antes de comprar el frasco completo.</p>
+            <button className="btn decants-btn" onClick={() => { setActiveCategory('Decants'); document.getElementById('catalogo')?.scrollIntoView({behavior: 'smooth'}) }}>VER DECANTS</button>
+          </div>
+        </section>
+
+        <section className="request-section">
+          <div className="request-content">
+            <h2>LO CONSEGUIMOS PARA TI</h2>
+            <p>¿Buscas una fragancia que no aparece en nuestro catálogo? Escríbenos y consulta disponibilidad.</p>
+            <button className="btn request-btn" onClick={() => window.open(`https://wa.me/${phoneNumber}?text=Hola,%20busco%20un%20perfume%20por%20encargo:%20`, '_blank')}>PEDIR POR ENCARGO</button>
+          </div>
+        </section>
+
+        <section className="trust-section">
+          <div className="trust-grid">
+            <div className="trust-item"><CheckCircle2 size={40} /> <span>Perfumes originales</span></div>
+            <div className="trust-item"><CheckCircle2 size={40} /> <span>Envíos nacionales</span></div>
+            <div className="trust-item"><CheckCircle2 size={40} /> <span>Entrega local en Pitalito</span></div>
+            <div className="trust-item"><CheckCircle2 size={40} /> <span>Atención personalizada</span></div>
+          </div>
+        </section>
+
+        <section className="history-section">
+          <div className="history-content">
+            <h2>Historia de Hermida</h2>
+            <p>Nos enorgullece ser tu perfumería de confianza, ofreciendo no solo productos auténticos, sino una experiencia de compra personalizada y cercana. Nuestra pasión es ayudarte a encontrar esa fragancia que te hará inolvidable.</p>
+          </div>
+        </section>
       </main>
 
       <footer className="footer" id="contacto">

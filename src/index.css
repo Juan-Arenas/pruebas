@@ -1556,4 +1556,132 @@ body.dark-theme .product-modal-image-col {
   background: #222;
 }
 
+/* --- NUEVAS SECCIONES --- */
+.decants-section {
+  background-color: #000000;
+  color: #ffffff;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+.decants-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.decants-content h2 {
+  color: #ffffff !important;
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+}
+.decants-content h3 {
+  color: var(--color-button);
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+.decants-content p {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+.decants-btn {
+  background: transparent;
+  border: 2px solid #ffffff;
+  color: #ffffff;
+}
+.decants-btn:hover {
+  background: #ffffff;
+  color: #000000;
+}
+
+.request-section {
+  background-color: var(--color-button);
+  color: #ffffff;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+.request-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.request-content h2 {
+  color: #ffffff !important;
+  font-size: 2.2rem;
+  margin-bottom: 1rem;
+}
+.request-content p {
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+.request-btn {
+  background: #ffffff;
+  color: var(--color-button);
+  font-weight: 700;
+}
+.request-btn:hover {
+  background: #f0f0f0;
+  color: var(--color-button-hover);
+}
+
+.trust-section {
+  background-color: var(--color-section-alt);
+  padding: 4rem 2rem;
+  border-top: 1px solid var(--color-border);
+}
+.trust-grid {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+}
+.trust-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  flex: 1;
+  min-width: 200px;
+}
+.trust-item svg {
+  color: var(--color-button);
+}
+.trust-item span {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--color-foreground);
+}
+
+.history-section {
+  padding: 5rem 2rem;
+  text-align: center;
+  background-color: var(--color-background);
+}
+.history-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.history-content h2 {
+  font-size: 2.2rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-heading);
+}
+.history-content p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--color-foreground);
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .decants-content h2, .request-content h2, .history-content h2 {
+    font-size: 1.8rem;
+  }
+}
+
+
 
