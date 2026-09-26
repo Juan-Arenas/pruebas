@@ -113,7 +113,7 @@ body.dark-theme .announcement-bar {
 .header {
   background: var(--color-background);
   border-bottom: 1px solid var(--color-border);
-  position: sticky;
+  position: relative;
   top: 0;
   z-index: 100;
 }
@@ -257,7 +257,7 @@ body.dark-theme .announcement-bar {
 }
 
 .section-header h2 {
-  font-family: 'Montserrat', sans-serif; letter-spacing: -3.5px; font-weight: 700;
+  font-family: 'Montserrat', sans-serif; letter-spacing: -1px; font-weight: 700;
   font-size: 2.8rem;
   color: var(--color-heading);
   margin-bottom: 0.5rem;
@@ -868,7 +868,7 @@ body.dark-theme .secondary-banner::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(5px);
+
 }
 
 .admin-login-modal {
