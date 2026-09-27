@@ -9,10 +9,14 @@ type Product = {
   name: string;
   price: string;
   priceRaw: number;
-  prices?: Record<string, number>;
+  prices?: {
+    '3ml': number;
+    '5ml': number;
+    '10ml': number;
+    '100ml': number;
+  };
   image: string;
-  category?: string;
-  categories?: string[];
+  category: string;
   promotion?: string;
   description?: string;
   status?: 'activo' | 'agotado';
@@ -26,6 +30,8 @@ function App() {
   const [siteLogo, setSiteLogo] = useState('/logo.jpg');
   const [adminPin, setAdminPin] = useState('1907');
   const [phoneNumber, setPhoneNumber] = useState('573144679154');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [tiktokUrl, setTiktokUrl] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
   const [categories, setCategories] = useState(['Amaderados', 'Dulces', 'Cítricos']);
@@ -55,8 +61,25 @@ function App() {
   const [customPrices, setCustomPrices] = useState<{size: string, price: number}[]>([]);
 
   useEffect(() => {
-    document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
-  }, [theme]);
+    document.body.className = 'light-theme';
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const reveals = document.querySelectorAll('.reveal, .reveal-bar');
+      for (let i = 0; i < reveals.length; i++) {
+        const windowHeight = window.innerHeight;
+        const elementTop = reveals[i].getBoundingClientRect().top;
+        const elementVisible = 100;
+        if (elementTop < windowHeight - elementVisible) {
+          reveals[i].classList.add('active');
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const unsubscribeProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
@@ -74,6 +97,8 @@ function App() {
         if (data.phoneNumber) setPhoneNumber(data.phoneNumber);
         if (data.instagramUrl) setInstagramUrl(data.instagramUrl);
         if (data.tiktokUrl) setTiktokUrl(data.tiktokUrl);
+        if (data.instagramUrl) setInstagramUrl(data.instagramUrl);
+        if (data.tiktokUrl) setTiktokUrl(data.tiktokUrl);
         if (data.categories) setCategories(data.categories);
         if (data.announcements) setAnnouncements(data.announcements);
       } else {
@@ -83,6 +108,8 @@ function App() {
           phoneNumber: '573144679154',
           instagramUrl: 'https://instagram.com/hermida.perfumes',
           tiktokUrl: 'https://tiktok.com/@hermida.perfumes',
+          instagramUrl: '',
+          tiktokUrl: '',
           categories: ['Amaderados', 'Dulces', 'Cítricos'],
           announcements: ['🚚 Envíos a toda Colombia 🇨🇴', '🛡️ Pagos 100% seguros', '⚡ Entregas rápidas y confiables']
         });
@@ -327,9 +354,6 @@ function App() {
           </nav>
 
           <div className="header-icons">
-            <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} className="theme-toggle" title="Cambiar tema">
-              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
             <User size={20} onClick={() => setShowAdminLogin(true)} style={{ cursor: 'pointer' }} />
             <button className="cart-btn-header" onClick={() => setIsCartOpen(true)}>
               <ShoppingBag size={20} /> Carrito <span className="cart-badge-inline">{cart.length}</span>
@@ -407,10 +431,10 @@ function App() {
           )}
         </section>
 
-        <section className="secondary-banner" id="como-pedir">
-          <div className="secondary-banner-content">
+        <section className="secondary-banner reveal" id="como-pedir">
+          <div className="secondary-banner-content clay-card">
             <img src={siteLogo} alt="Hermida Perfumes Logo" className="secondary-banner-logo" />
-            <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: 'var(--color-foreground)' }}>¿CÓMO HACER TU PEDIDO?</h2>
+            <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: 'var(--color-heading)' }}>¿CÓMO HACER TU PEDIDO?</h2>
             <div className="order-steps-container">
               <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 1. Elige tu perfume y tamaño favorito.</p>
               <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 2. Agrégalo al carrito y ve a pagar.</p>
@@ -420,42 +444,42 @@ function App() {
           </div>
         </section>
 
-        <section className="decants-section">
-          <div className="decants-content">
-            <h2>¿QUIERES PROBARLO ANTES?</h2>
-            <h3>Decants de 5 ml y 10 ml.</h3>
-            <p>Son ideales para conocer una fragancia en tu piel antes de comprar el frasco completo.</p>
+        <section className="decants-section reveal reveal-bar">
+          <div className="decants-content clay-card">
+            <h2 style={{color: 'var(--color-heading)'}}>¿QUIERES PROBARLO ANTES?</h2>
+            <h3 style={{color: 'var(--color-button)'}}>Decants de 5 ml y 10 ml.</h3>
+            <p style={{color: 'var(--color-foreground)'}}>Son ideales para conocer una fragancia en tu piel antes de comprar el frasco completo.</p>
             <button className="btn decants-btn" onClick={() => { setActiveCategory('Decants'); document.getElementById('catalogo')?.scrollIntoView({behavior: 'smooth'}) }}>VER DECANTS</button>
           </div>
         </section>
 
-        <section className="request-section">
-          <div className="request-content">
-            <h2>LO CONSEGUIMOS PARA TI</h2>
-            <p>¿Buscas una fragancia que no aparece en nuestro catálogo? Escríbenos y consulta disponibilidad.</p>
+        <section className="request-section reveal">
+          <div className="request-content clay-card">
+            <h2 style={{color: 'var(--color-heading)'}}>LO CONSEGUIMOS PARA TI</h2>
+            <p style={{color: 'var(--color-foreground)'}}>¿Buscas una fragancia que no aparece en nuestro catálogo? Escríbenos y consulta disponibilidad.</p>
             <button className="btn request-btn" onClick={() => window.open(`https://wa.me/${phoneNumber}?text=Hola,%20busco%20un%20perfume%20por%20encargo:%20`, '_blank')}>PEDIR POR ENCARGO</button>
           </div>
         </section>
 
-        <section className="trust-section">
+        <section className="trust-section reveal">
           <div className="trust-grid">
-            <div className="trust-item"><CheckCircle2 size={40} /> <span>Perfumes originales</span></div>
-            <div className="trust-item"><CheckCircle2 size={40} /> <span>Envíos nacionales</span></div>
-            <div className="trust-item"><CheckCircle2 size={40} /> <span>Entrega local en Pitalito</span></div>
-            <div className="trust-item"><CheckCircle2 size={40} /> <span>Atención personalizada</span></div>
+            <div className="trust-item clay-card" style={{padding: '1.5rem'}}><CheckCircle2 size={40} /> <span>Perfumes originales</span></div>
+            <div className="trust-item clay-card" style={{padding: '1.5rem'}}><CheckCircle2 size={40} /> <span>Envíos nacionales</span></div>
+            <div className="trust-item clay-card" style={{padding: '1.5rem'}}><CheckCircle2 size={40} /> <span>Entrega local en Pitalito</span></div>
+            <div className="trust-item clay-card" style={{padding: '1.5rem'}}><CheckCircle2 size={40} /> <span>Atención personalizada</span></div>
           </div>
         </section>
 
-        <section className="history-section">
-          <div className="history-content">
+        <section className="history-section reveal reveal-bar">
+          <div className="history-content clay-card">
             <h2>Historia de Hermida</h2>
             <p>Nos enorgullece ser tu perfumería de confianza, ofreciendo no solo productos auténticos, sino una experiencia de compra personalizada y cercana. Nuestra pasión es ayudarte a encontrar esa fragancia que te hará inolvidable.</p>
           </div>
         </section>
       </main>
 
-      <footer className="footer" id="contacto">
-        <div className="contact-card">
+      <footer className="footer reveal" id="contacto">
+        <div className="contact-card clay-card">
           <img src={siteLogo} alt="Logo Hermida" className="contact-card-logo" />
           <h3 className="contact-card-title">HERMIDA PERFUMES</h3>
           <p className="contact-card-text">
