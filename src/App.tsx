@@ -355,7 +355,7 @@ function App() {
         <section className="featured-collection" id="catalogo">
           <div className="section-header">
             <h2><span className="nuestra-text">Nuestra</span> <span className="coleccion-text">Colección ✨</span></h2>
-            <p>Explora nuestra colección completa de perfumería árabe, nicho y diseñador</p>
+            <p>Encuentra tu nueva fragancia favorita</p>
           </div>
 
           <div className="catalog-controls">
