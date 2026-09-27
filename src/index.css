@@ -460,7 +460,7 @@ ul {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #111;
+  background-color: #f5f5f7;
 }
 
 .secondary-banner::after {
@@ -468,8 +468,9 @@ ul {
   position: absolute;
   top: -30px; left: -30px; right: -30px; bottom: -30px;
   background: url('/banner.jpeg') center/cover no-repeat;
-  filter: blur(10px);
+  filter: blur(15px);
   z-index: 0;
+  opacity: 0.7;
 }
 
 
@@ -1455,14 +1456,16 @@ ul {
 }
 
 .contact-card {
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: 20px;
-  padding: 3rem 2rem;
-  max-width: 600px;
-  margin: 0 auto 1rem auto;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 30px;
+  padding: 4rem 3rem;
+  max-width: 700px;
+  margin: 0 auto 2rem auto;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(255,255,255,0.5);
 }
 
 .contact-card-logo {
@@ -1500,13 +1503,18 @@ ul {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  padding: 1rem;
-  border-radius: 12px;
-  font-weight: 600;
+  padding: 1.2rem;
+  border-radius: 50px;
+  font-weight: 700;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   color: #fff !important;
   font-size: 1.1rem;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+.contact-btn:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
 }
 
 .contact-btn.instagram {
@@ -1530,10 +1538,11 @@ ul {
 
 /* --- NUEVAS SECCIONES --- */
 .decants-section {
-  background-color: #000000;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
   color: #ffffff;
-  padding: 4rem 2rem;
+  padding: 6rem 2rem;
   text-align: center;
+  position: relative;
 }
 .decants-content {
   max-width: 800px;
@@ -1568,10 +1577,11 @@ ul {
 }
 
 .request-section {
-  background-color: var(--color-button);
-  color: #ffffff;
-  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  color: #000;
+  padding: 6rem 2rem;
   text-align: center;
+  position: relative;
 }
 .request-content {
   max-width: 800px;
@@ -1618,6 +1628,14 @@ ul {
   text-align: center;
   flex: 1;
   min-width: 200px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.1), 0 10px 20px rgba(0,0,0,0.06) !important;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+  transform: translateY(0);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.trust-item:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 35px 60px rgba(0,0,0,0.15), 0 15px 25px rgba(0,0,0,0.1) !important;
 }
 .trust-item svg {
   color: var(--color-button);
@@ -1695,4 +1713,32 @@ ul {
 }
 .reveal-bar.active::after {
   top: 0;
+}
+
+/* Liquid Glass / Glassmorphism */
+.glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 30px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  padding: 4rem;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -150%; width: 50%; height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+  transform: skewX(-25deg);
+  animation: shine 5s infinite cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: -1;
+}
+@keyframes shine {
+  0% { left: -150%; }
+  20% { left: 200%; }
+  100% { left: 200%; }
 }

@@ -434,7 +434,7 @@ function App() {
         </section>
 
         <section className="decants-section reveal reveal-bar">
-          <div className="decants-content clay-card">
+          <div className="decants-content glass-card">
             <h2 style={{color: 'var(--color-heading)'}}>¿QUIERES PROBARLO ANTES?</h2>
             <h3 style={{color: 'var(--color-button)'}}>Decants de 5 ml y 10 ml.</h3>
             <p style={{color: 'var(--color-foreground)'}}>Son ideales para conocer una fragancia en tu piel antes de comprar el frasco completo.</p>
@@ -443,7 +443,7 @@ function App() {
         </section>
 
         <section className="request-section reveal">
-          <div className="request-content clay-card">
+          <div className="request-content glass-card">
             <h2 style={{color: 'var(--color-heading)'}}>LO CONSEGUIMOS PARA TI</h2>
             <p style={{color: 'var(--color-foreground)'}}>¿Buscas una fragancia que no aparece en nuestro catálogo? Escríbenos y consulta disponibilidad.</p>
             <button className="btn request-btn" onClick={() => window.open(`https://wa.me/${phoneNumber}?text=Hola,%20busco%20un%20perfume%20por%20encargo:%20`, '_blank')}>PEDIR POR ENCARGO</button>
@@ -460,7 +460,7 @@ function App() {
         </section>
 
         <section className="history-section reveal reveal-bar">
-          <div className="history-content clay-card">
+          <div className="history-content glass-card">
             <h2>Historia de Hermida</h2>
             <p>Nos enorgullece ser tu perfumería de confianza, ofreciendo no solo productos auténticos, sino una experiencia de compra personalizada y cercana. Nuestra pasión es ayudarte a encontrar esa fragancia que te hará inolvidable.</p>
           </div>
@@ -468,7 +468,7 @@ function App() {
       </main>
 
       <footer className="footer reveal" id="contacto">
-        <div className="contact-card clay-card">
+        <div className="contact-card glass-card">
           <img src={siteLogo} alt="Logo Hermida" className="contact-card-logo" />
           <h3 className="contact-card-title">HERMIDA PERFUMES</h3>
           <p className="contact-card-text">
