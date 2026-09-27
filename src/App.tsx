@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingBag, User, Phone, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, Sun, Moon, UploadCloud, Info } from 'lucide-react';
+import { Search, ShoppingBag, User, Phone, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, UploadCloud, Info } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import './index.css';
@@ -9,14 +9,10 @@ type Product = {
   name: string;
   price: string;
   priceRaw: number;
-  prices?: {
-    '3ml': number;
-    '5ml': number;
-    '10ml': number;
-    '100ml': number;
-  };
+  prices?: Record<string, number>;
   image: string;
-  category: string;
+  category?: string;
+  categories?: string[];
   promotion?: string;
   description?: string;
   status?: 'activo' | 'agotado';
@@ -25,13 +21,10 @@ type Product = {
 type CartItem = Product & { quantity: number; selectedSize: string };
 
 function App() {
-  const [theme, setTheme] = useState('light');
   const [products, setProducts] = useState<Product[]>([]);
   const [siteLogo, setSiteLogo] = useState('/logo.jpg');
   const [adminPin, setAdminPin] = useState('1907');
   const [phoneNumber, setPhoneNumber] = useState('573144679154');
-  const [instagramUrl, setInstagramUrl] = useState('');
-  const [tiktokUrl, setTiktokUrl] = useState('');
   const [instagramUrl, setInstagramUrl] = useState('');
   const [tiktokUrl, setTiktokUrl] = useState('');
   const [categories, setCategories] = useState(['Amaderados', 'Dulces', 'Cítricos']);
@@ -97,8 +90,6 @@ function App() {
         if (data.phoneNumber) setPhoneNumber(data.phoneNumber);
         if (data.instagramUrl) setInstagramUrl(data.instagramUrl);
         if (data.tiktokUrl) setTiktokUrl(data.tiktokUrl);
-        if (data.instagramUrl) setInstagramUrl(data.instagramUrl);
-        if (data.tiktokUrl) setTiktokUrl(data.tiktokUrl);
         if (data.categories) setCategories(data.categories);
         if (data.announcements) setAnnouncements(data.announcements);
       } else {
@@ -108,8 +99,6 @@ function App() {
           phoneNumber: '573144679154',
           instagramUrl: 'https://instagram.com/hermida.perfumes',
           tiktokUrl: 'https://tiktok.com/@hermida.perfumes',
-          instagramUrl: '',
-          tiktokUrl: '',
           categories: ['Amaderados', 'Dulces', 'Cítricos'],
           announcements: ['🚚 Envíos a toda Colombia 🇨🇴', '🛡️ Pagos 100% seguros', '⚡ Entregas rápidas y confiables']
         });
