@@ -439,9 +439,6 @@ function App() {
         <section className="hero-section reveal">
           <div className="hero-background"></div>
           <div className="hero-content">
-            <span className="hero-subtitle">HERMIDA PERFUMES</span>
-            <h2 className="hero-title">ELIGE CÓMO QUIERES SER RECORDADO</h2>
-            <p className="hero-desc">Descubre fragancias premium que definen tu presencia.</p>
             <div className="hero-actions">
               <button className="btn-premium primary" onClick={() => document.getElementById('catalogo')?.scrollIntoView({behavior: 'smooth'})}>
                 EXPLORAR CATÁLOGO <ArrowRight size={18} />
