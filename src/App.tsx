@@ -436,16 +436,7 @@ function App() {
       </header>
 
       <main>
-        <section className="hero-section reveal">
-          <div className="hero-background"></div>
-          <div className="hero-content">
-            <div className="hero-actions">
-              <button className="btn-premium primary" onClick={() => document.getElementById('catalogo')?.scrollIntoView({behavior: 'smooth'})}>
-                EXPLORAR CATÁLOGO <ArrowRight size={18} />
-              </button>
-            </div>
-          </div>
-        </section>
+        {/* Removed Hero Section */}
 
         <section className="decants-promo-section reveal" id="decants">
           <div className="decants-promo-content glass-card">
