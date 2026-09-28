@@ -23,7 +23,7 @@
   padding: 0;
 }
 
-body {
+html, body {
   font-family: 'Inter', sans-serif;
   background-color: var(--color-bg);
   color: var(--color-text-main);
@@ -661,8 +661,11 @@ button {
   background: var(--color-bg);
   width: 90%;
   max-width: 900px;
+  max-height: 85vh;
+  display: block;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-lg);
-  overflow: hidden;
   position: relative;
   transform: scale(0.95);
   animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -671,14 +674,15 @@ button {
 @keyframes scaleUp { to { transform: scale(1); } }
 
 .premium-modal-close {
-  position: absolute;
-  top: 1.5rem; right: 1.5rem;
+  position: absolute; /* Changed to sticky maybe? No, let's keep absolute, it's inside the scrolling card. */
+  top: 1rem; right: 1rem;
   background: var(--color-surface);
   border-radius: 50%;
   width: 40px; height: 40px;
   display: flex; align-items: center; justify-content: center;
-  z-index: 10;
+  z-index: 50; /* ensure it stays on top */
   transition: var(--transition);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .premium-modal-close:hover {
   background: var(--color-border);
