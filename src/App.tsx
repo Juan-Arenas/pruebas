@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingBag, User, Phone, X, Plus, Minus, Trash2, Edit, Save, Shield, UploadCloud, Filter, ArrowRight } from 'lucide-react';
+import { Search, ShoppingBag, User, Phone, X, Plus, Minus, Trash2, Edit, Save, Shield, UploadCloud, Filter } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import './index.css';
