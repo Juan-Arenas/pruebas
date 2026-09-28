@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ShoppingBag, User, Phone, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, UploadCloud, Info } from 'lucide-react';
+import { Search, ShoppingBag, User, Phone, CheckCircle2, X, Plus, Minus, Trash2, Edit, Save, Shield, UploadCloud, Info, Filter, ArrowRight } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import './index.css';
@@ -40,6 +40,7 @@ function App() {
   const [selectedDetailsSize, setSelectedDetailsSize] = useState<string>('100ml');
   const [activeCategory, setActiveCategory] = useState('Todas');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   const [logoClicks, setLogoClicks] = useState(0);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -114,12 +115,12 @@ function App() {
   useEffect(() => localStorage.setItem('hermida_cart', JSON.stringify(cart)), [cart]);
 
   useEffect(() => {
-    if (showAdminLogin || isAdminAuth || isCartOpen || selectedProductDetails) {
+    if (showAdminLogin || isAdminAuth || isCartOpen || selectedProductDetails || isMobileFiltersOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
-  }, [showAdminLogin, isAdminAuth, isCartOpen, selectedProductDetails]);
+  }, [showAdminLogin, isAdminAuth, isCartOpen, selectedProductDetails, isMobileFiltersOpen]);
 
   useEffect(() => {
     if (logoClicks >= 5) {
@@ -154,7 +155,12 @@ function App() {
   const addToCart = (product: Product, size: string) => {
     if (product.status === 'agotado') return;
     
-    const finalSize = size || '100ml';
+    const availableSizes = Object.keys(product.prices || {});
+    let finalSize = size;
+    if (!product.prices || availableSizes.length === 0) {
+      finalSize = 'Botella';
+    }
+    
     const finalId = `${product.id}-${finalSize}`;
     const finalName = `${product.name} (${finalSize})`;
     const priceRaw = getPriceForSize(product, finalSize);
@@ -309,10 +315,86 @@ function App() {
   };
 
   const filteredProducts = products.filter(p => {
-    const matchesCategory = activeCategory === 'Todas' || p.category === activeCategory || (p.categories && p.categories.includes(activeCategory));
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesCategory = activeCategory === 'Todas' || activeCategory === 'Decants' || p.category === activeCategory || (p.categories && p.categories.includes(activeCategory));
+    
+    let isDecantMatch = true;
+    if (activeCategory === 'Decants') {
+       isDecantMatch = p.prices ? Object.keys(p.prices).some(s => s.toLowerCase().includes('ml')) : false;
+    }
+    
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (p.categories && p.categories.join(' ').toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    return matchesCategory && matchesSearch && isDecantMatch;
   });
+
+  const getBottleSize = (prices?: Record<string, number>) => {
+    if (!prices || Object.keys(prices).length === 0) return 'Botella';
+    const keys = Object.keys(prices);
+    const bottleKey = keys.find(k => k.toLowerCase().includes('100') || k.toLowerCase().includes('botella'));
+    return bottleKey || keys[0];
+  }
+
+  const ProductCardComponent = ({ product }: { product: Product }) => {
+    const [selectedSize, setSelectedSize] = useState<string>(getBottleSize(product.prices));
+    
+    const availableSizes = product.prices ? Object.keys(product.prices) : [];
+    const hasDecants = availableSizes.length > 1;
+
+    return (
+      <div className="product-card premium-card fade-in-up">
+        <div className="product-card-inner">
+          <div className="product-image-wrapper" onClick={() => { setSelectedProductDetails(product); setSelectedDetailsSize(selectedSize); }}>
+            {product.promotion && <div className="product-promo-badge">{product.promotion}</div>}
+            {product.status === 'agotado' && <div className="product-promo-badge agotado">AGOTADO</div>}
+            <img src={product.image} alt={product.name} className="product-image" loading="lazy" />
+            <div className="quick-view-overlay">
+              <span>VISTA RÁPIDA</span>
+            </div>
+          </div>
+          
+          <div className="product-info">
+            {product.category && <span className="product-brand">{product.category}</span>}
+            <h3 className="product-title">{product.name}</h3>
+            
+            {!hasDecants ? (
+              <div className="product-single-price">
+                <span className="price-val">${getPriceForSize(product, selectedSize).toLocaleString('es-CO')}</span>
+                <span className="price-label">· Botella</span>
+              </div>
+            ) : (
+              <div className="product-decants-container">
+                <div className="product-single-price">
+                   <span className="price-val">${getPriceForSize(product, selectedSize).toLocaleString('es-CO')}</span>
+                   <span className="price-label">· {selectedSize}</span>
+                </div>
+                <p className="decants-title">PRESENTACIONES</p>
+                <div className="decants-options">
+                  {availableSizes.map(size => (
+                    <button 
+                      key={size} 
+                      className={`decant-btn ${selectedSize === size ? 'active' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); setSelectedSize(size); }}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <button 
+              className="btn-add-premium" 
+              style={{ opacity: product.status === 'agotado' ? 0.5 : 1, pointerEvents: product.status === 'agotado' ? 'none' : 'auto' }}
+              onClick={(e) => { e.stopPropagation(); addToCart(product, selectedSize); }}
+            >
+              {product.status === 'agotado' ? 'AGOTADO' : '+ AGREGAR'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -326,233 +408,277 @@ function App() {
         </div>
       </div>
 
-      <header className="header">
+      <header className="header premium-header">
         <div className="header-container">
           <div className="logo-section" onClick={() => setLogoClicks(c => c + 1)} style={{ cursor: 'pointer' }}>
             <img src={siteLogo} alt="Hermida Perfumes" className="logo-img" />
             <div className="logo-text">
-              <h1 className="store-name">HERMIDA PERFUMES</h1>
-              <span className="tagline">Elige Como Quieres Ser Recordado ✨</span>
+              <h1 className="store-name">HERMIDA</h1>
+              <span className="tagline">Perfumes</span>
             </div>
           </div>
 
-          <nav className="header-nav">
+          <nav className="header-nav desktop-nav">
             <a href="#catalogo" className="active">Catálogo</a>
             <a href="#como-pedir">Cómo Pedir</a>
+            <a href="#decants">Decants</a>
             <a href="#contacto">Contacto</a>
           </nav>
 
           <div className="header-icons">
-            <User size={20} onClick={() => setShowAdminLogin(true)} style={{ cursor: 'pointer' }} />
-            <button className="cart-btn-header" onClick={() => setIsCartOpen(true)}>
-              <ShoppingBag size={20} /> Carrito <span className="cart-badge-inline">{cart.length}</span>
+            <Search size={22} className="icon-btn search-trigger" onClick={() => document.getElementById('main-search')?.focus()} />
+            <User size={22} className="icon-btn" onClick={() => setShowAdminLogin(true)} />
+            <button className="cart-btn-header premium-cart-btn" onClick={() => setIsCartOpen(true)}>
+              <ShoppingBag size={20} /> <span className="cart-badge-inline">{cart.length}</span>
             </button>
           </div>
         </div>
       </header>
 
       <main>
-        <section className="featured-collection" id="catalogo">
-          <div className="section-header">
-            <h2><span className="nuestra-text">Nuestra</span> <span className="coleccion-text">Colección ✨</span></h2>
-            <p>Encuentra tu nueva fragancia favorita</p>
+        <section className="hero-section reveal">
+          <div className="hero-background"></div>
+          <div className="hero-content">
+            <span className="hero-subtitle">HERMIDA PERFUMES</span>
+            <h2 className="hero-title">ELIGE CÓMO QUIERES SER RECORDADO</h2>
+            <p className="hero-desc">Descubre fragancias premium que definen tu presencia.</p>
+            <div className="hero-actions">
+              <button className="btn-premium primary" onClick={() => document.getElementById('catalogo')?.scrollIntoView({behavior: 'smooth'})}>
+                EXPLORAR CATÁLOGO <ArrowRight size={18} />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="decants-promo-section reveal" id="decants">
+          <div className="decants-promo-content glass-card">
+            <h2>DESCUBRE ANTES DE COMPRAR</h2>
+            <p>Prueba tus fragancias favoritas en formato decant de 5 ml y 10 ml antes de llevar la botella completa.</p>
+            <button className="btn-outline-light" onClick={() => { setActiveCategory('Decants'); document.getElementById('catalogo')?.scrollIntoView({behavior: 'smooth'}); }}>VER TODOS LOS DECANTS</button>
+          </div>
+        </section>
+
+        <section className="catalog-section" id="catalogo">
+          <div className="catalog-header reveal">
+            <h2>NUESTRA COLECCIÓN</h2>
           </div>
 
-          <div className="catalog-controls">
-            <div className="valen-search-bar">
-              <Search size={20} className="valen-search-icon" />
+          <div className="catalog-controls reveal">
+            <div className="modern-search-wrapper">
+              <Search size={20} className="search-icon" />
               <input
+                id="main-search"
                 type="text"
-                placeholder="Buscar productos... (ej. Lattafa, Creed, Dulce)"
+                placeholder="Busca tu fragancia (ej. Khamrah, Lattafa...)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="valen-search-input"
+                className="modern-search-input"
               />
             </div>
-            <div className="categories-filter">
-              {['Todas', ...categories].map(cat => (
+            
+            <div className="desktop-filters">
+              {['Todas', 'Decants', ...categories].map(cat => (
                 <button
                   key={cat}
-                  className={`category-btn ${activeCategory === cat ? 'active' : ''}`}
+                  className={`filter-chip ${activeCategory === cat ? 'active' : ''}`}
                   onClick={() => setActiveCategory(cat)}
                 >
                   {cat}
                 </button>
               ))}
             </div>
+
+            <button className="mobile-filter-btn" onClick={() => setIsMobileFiltersOpen(true)}>
+              <Filter size={18} /> FILTRAR Y ORDENAR
+            </button>
           </div>
 
-          <p className="catalog-count-text">
-            Mostrando {filteredProducts.length} productos
-          </p>
-
           {loading ? (
-            <div style={{ minHeight: '400px' }}></div>
+            <div className="skeleton-grid">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                <div key={n} className="skeleton-card">
+                  <div className="skeleton-img"></div>
+                  <div className="skeleton-text short"></div>
+                  <div className="skeleton-text"></div>
+                  <div className="skeleton-text button"></div>
+                </div>
+              ))}
+            </div>
           ) : filteredProducts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '4rem 0', color: '#888' }}>
-              <p>No hay perfumes en esta categoría.</p>
+            <div className="empty-state">
+              <p>No se encontraron resultados para tu búsqueda.</p>
+              <button className="btn-outline-dark" onClick={() => {setSearchQuery(''); setActiveCategory('Todas');}}>Ver todos los productos</button>
             </div>
           ) : (
             <div className="product-grid">
               {filteredProducts.map((product) => (
-                <div key={product.id} className="product-card" onClick={() => { setSelectedProductDetails(product); setSelectedDetailsSize('100ml'); }}>
-                  <div className="product-image-wrapper">
-                    {product.promotion && <div className="product-promo-badge">{product.promotion}</div>}
-                    {product.status === 'agotado' && <div className="product-promo-badge" style={{ background: '#333' }}>AGOTADO</div>}
-                    <img src={product.image} alt={product.name} className="product-image" />
-                  </div>
-                  <div className="product-info">
-                    <h3 className="product-title">{product.name}</h3>
-                    <p className="product-price">{product.price}</p>
-                    <button 
-                      className="add-to-cart-btn" 
-                      style={{ opacity: product.status === 'agotado' ? 0.5 : 1 }}
-                      onClick={(e) => { e.stopPropagation(); setSelectedProductDetails(product); setSelectedDetailsSize('100ml'); }}
-                    >
-                      <span>{product.status === 'agotado' ? 'Agotado' : 'Ver y Agregar'}</span> <Info size={14} />
-                    </button>
-                  </div>
-                </div>
+                <ProductCardComponent key={product.id} product={product} />
               ))}
             </div>
           )}
         </section>
 
-        <section className="secondary-banner reveal" id="como-pedir">
-          <div className="secondary-banner-content clay-card">
-            <img src={siteLogo} alt="Hermida Perfumes Logo" className="secondary-banner-logo" />
-            <h2 style={{ fontSize: '2rem', marginBottom: '1.5rem', color: 'var(--color-heading)' }}>¿CÓMO HACER TU PEDIDO?</h2>
-            <div className="order-steps-container">
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 1. Elige tu perfume y tamaño favorito.</p>
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 2. Agrégalo al carrito y ve a pagar.</p>
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 3. Se enviará tu orden directa a WhatsApp.</p>
-              <p className="step-text"><CheckCircle2 size={20} color="var(--color-button)" /> 4. Despachamos de inmediato a todo el país.</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="decants-section reveal reveal-bar">
-          <div className="decants-content glass-card">
-            <h2 style={{color: 'var(--color-heading)'}}>¿QUIERES PROBARLO ANTES?</h2>
-            <h3 style={{color: 'var(--color-button)'}}>Decants de 5 ml y 10 ml.</h3>
-            <p style={{color: 'var(--color-foreground)'}}>Son ideales para conocer una fragancia en tu piel antes de comprar el frasco completo.</p>
-            <button className="btn decants-btn" onClick={() => { setActiveCategory('Decants'); document.getElementById('catalogo')?.scrollIntoView({behavior: 'smooth'}) }}>VER DECANTS</button>
-          </div>
-        </section>
-
-        <section className="request-section reveal">
-          <div className="request-content glass-card">
-            <h2 style={{color: 'var(--color-heading)'}}>LO CONSEGUIMOS PARA TI</h2>
-            <p style={{color: 'var(--color-foreground)'}}>¿Buscas una fragancia que no aparece en nuestro catálogo? Escríbenos y consulta disponibilidad.</p>
-            <button className="btn request-btn" onClick={() => window.open(`https://wa.me/${phoneNumber}?text=Hola,%20busco%20un%20perfume%20por%20encargo:%20`, '_blank')}>PEDIR POR ENCARGO</button>
-          </div>
-        </section>
-
-        <section className="trust-section reveal">
-          <div className="trust-grid">
-            <div className="trust-item clay-card" style={{padding: '1.5rem'}}><CheckCircle2 size={40} /> <span>Perfumes originales</span></div>
-            <div className="trust-item clay-card" style={{padding: '1.5rem'}}><CheckCircle2 size={40} /> <span>Envíos nacionales</span></div>
-            <div className="trust-item clay-card" style={{padding: '1.5rem'}}><CheckCircle2 size={40} /> <span>Entrega local en Pitalito</span></div>
-            <div className="trust-item clay-card" style={{padding: '1.5rem'}}><CheckCircle2 size={40} /> <span>Atención personalizada</span></div>
-          </div>
-        </section>
-
-        <section className="history-section reveal reveal-bar">
-          <div className="history-content glass-card">
-            <h2>Historia de Hermida</h2>
-            <p>Nos enorgullece ser tu perfumería de confianza, ofreciendo no solo productos auténticos, sino una experiencia de compra personalizada y cercana. Nuestra pasión es ayudarte a encontrar esa fragancia que te hará inolvidable.</p>
+        <section className="editorial-section reveal">
+          <div className="editorial-content">
+            <h2>UNA FRAGANCIA DICE MÁS DE TI DE LO QUE IMAGINAS.</h2>
+            <p>La perfumería es el arte de crear recuerdos imborrables.</p>
+            <button className="btn-outline-light" onClick={() => document.getElementById('catalogo')?.scrollIntoView({behavior: 'smooth'})}>DESCUBRIR HERMIDA</button>
           </div>
         </section>
       </main>
 
       <footer className="footer reveal" id="contacto">
-        <div className="contact-card glass-card">
-          <img src={siteLogo} alt="Logo Hermida" className="contact-card-logo" />
-          <h3 className="contact-card-title">HERMIDA PERFUMES</h3>
-          <p className="contact-card-text">
-            Nos especializamos en ofrecer perfumes originales de la más alta calidad, con envíos seguros a nivel nacional.
-          </p>
-          <div className="contact-buttons-container">
-            <a href="https://instagram.com/hermida.perfumes" className="contact-btn instagram" target="_blank" rel="noopener noreferrer">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-              <span>@hermida.perfumes</span>
-            </a>
-            <a href="https://tiktok.com/@hermida.perfumes" className="contact-btn tiktok" target="_blank" rel="noopener noreferrer">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path></svg>
-              <span>@hermida.perfumes</span>
-            </a>
-            <a href={`https://wa.me/${phoneNumber}?text=Hola,%20quisiera%20más%20información`} className="contact-btn whatsapp" target="_blank" rel="noopener noreferrer">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-              <span>WhatsApp: +{phoneNumber}</span>
-            </a>
-          </div>
+        <div className="footer-content">
+           <div className="footer-brand">
+              <img src={siteLogo} alt="Logo" className="footer-logo" />
+              <h3>HERMIDA PERFUMES</h3>
+              <p>Perfumería premium con envíos seguros a toda Colombia.</p>
+           </div>
+           <div className="footer-links">
+              <h4>Enlaces</h4>
+              <a href="#catalogo">Catálogo</a>
+              <a href="#decants">Decants</a>
+              <a href="#como-pedir">Cómo comprar</a>
+           </div>
+           <div className="footer-social">
+              <h4>Síguenos</h4>
+              <div className="social-links-row">
+                 <a href={instagramUrl || "https://instagram.com"} target="_blank" rel="noreferrer" className="social-icon">IG</a>
+                 <a href={tiktokUrl || "https://tiktok.com"} target="_blank" rel="noreferrer" className="social-icon">TK</a>
+              </div>
+           </div>
         </div>
-        <div className="footer-bottom" style={{ color: 'var(--color-foreground)', marginTop: '2rem' }}>© {new Date().getFullYear()} Hermida Perfumes. Todos los derechos reservados.</div>
+        <div className="footer-bottom">
+           <p>© {new Date().getFullYear()} Hermida Perfumes. Todos los derechos reservados.</p>
+        </div>
       </footer>
 
+      <a href={`https://wa.me/${phoneNumber}`} target="_blank" rel="noreferrer" className="whatsapp-fab">
+        <svg viewBox="0 0 24 24" fill="white" width="30" height="30"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+      </a>
 
-
-      {/* Product Details Modal */}
       {selectedProductDetails && (
-        <div className="modal-overlay" onClick={() => setSelectedProductDetails(null)}>
-          <div className="product-details-modal" onClick={e => e.stopPropagation()}>
-            <button className="product-modal-close" onClick={() => setSelectedProductDetails(null)}>
-              <X size={28} />
+        <div className="premium-modal-overlay" onClick={() => setSelectedProductDetails(null)}>
+          <div className="premium-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="premium-modal-close" onClick={() => setSelectedProductDetails(null)}>
+              <X size={24} />
             </button>
-            
-            <div className="product-modal-image-col">
-              <img src={selectedProductDetails.image} alt={selectedProductDetails.name} />
-            </div>
-            
-            <div className="product-modal-info-col">
-              <h2 className="product-modal-title">{selectedProductDetails.name}</h2>
-              <div className="product-modal-price">
-                ${getPriceForSize(selectedProductDetails, selectedDetailsSize).toLocaleString('es-CO')}
+            <div className="premium-modal-grid">
+              <div className="modal-img-col">
+                <img src={selectedProductDetails.image} alt={selectedProductDetails.name} />
               </div>
-              
-              <div className="product-modal-desc">
-                {selectedProductDetails.description || 'Una fragancia excepcional que define tu presencia y elegancia.'}
-              </div>
-
-              <h4 style={{ marginBottom: '1rem', color: 'var(--color-foreground)', opacity: 0.8 }}>Elige tu tamaño</h4>
-              <div className="product-modal-sizes">
-                {Object.entries(selectedProductDetails.prices && Object.keys(selectedProductDetails.prices).length > 0 ? selectedProductDetails.prices : { '100ml': selectedProductDetails.priceRaw || 0 }).map(([size, price]) => {
-                  return (
-                    <div 
-                      key={size}
-                      className={`size-option ${selectedDetailsSize === size ? 'active' : ''}`}
-                      onClick={() => setSelectedDetailsSize(size)}
-                    >
-                      <div className="size-option-left">
-                        <div className="radio-circle"></div>
-                        <span className="size-option-name">{size}</span>
-                      </div>
-                      <span className="size-option-price">${price.toLocaleString('es-CO')}</span>
+              <div className="modal-info-col">
+                <span className="modal-brand">{selectedProductDetails.category}</span>
+                <h2 className="modal-title">{selectedProductDetails.name}</h2>
+                <div className="modal-price-wrap">
+                  <span className="modal-price">${getPriceForSize(selectedProductDetails, selectedDetailsSize).toLocaleString('es-CO')}</span>
+                </div>
+                <div className="modal-desc">
+                  {selectedProductDetails.description || 'Una fragancia elegante y duradera. Perfecta para dejar una impresión inolvidable.'}
+                </div>
+                
+                {selectedProductDetails.prices && Object.keys(selectedProductDetails.prices).length > 0 && (
+                  <div className="modal-sizes">
+                    <h4>PRESENTACIONES DISPONIBLES</h4>
+                    <div className="size-selector-grid">
+                      {Object.entries(selectedProductDetails.prices).map(([size, price]) => (
+                        <div 
+                          key={size}
+                          className={`size-box ${selectedDetailsSize === size ? 'active' : ''}`}
+                          onClick={() => setSelectedDetailsSize(size)}
+                        >
+                          <span className="sz-name">{size}</span>
+                          <span className="sz-price">${price.toLocaleString('es-CO')}</span>
+                        </div>
+                      ))}
                     </div>
-                  )
-                })}
+                  </div>
+                )}
+                
+                <button 
+                  className="btn-premium-solid"
+                  disabled={selectedProductDetails.status === 'agotado'}
+                  onClick={() => addToCart(selectedProductDetails, selectedDetailsSize)}
+                >
+                  {selectedProductDetails.status === 'agotado' ? 'AGOTADO' : 'AGREGAR AL CARRITO'}
+                </button>
               </div>
-              
-              <button 
-                className="btn product-modal-add-btn"
-                style={{ opacity: selectedProductDetails.status === 'agotado' ? 0.5 : 1 }} 
-                onClick={() => { addToCart(selectedProductDetails, selectedDetailsSize); }}
-                disabled={selectedProductDetails.status === 'agotado'}
-              >
-                {selectedProductDetails.status === 'agotado' ? 'AGOTADO' : 'AÑADIR AL CARRITO'} <ShoppingBag size={18} />
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Admin Panel Setup */}
+      <div className={`cart-overlay ${isCartOpen ? 'open' : ''}`} onClick={() => setIsCartOpen(false)}></div>
+      <div className={`modern-cart-drawer ${isCartOpen ? 'open' : ''}`}>
+        <div className="cart-header">
+          <h3>CARRITO ({cart.length})</h3>
+          <button className="close-cart-btn" onClick={() => setIsCartOpen(false)}><X size={24} /></button>
+        </div>
+        <div className="cart-items">
+          {cart.length === 0 ? (
+            <div className="empty-cart-modern">
+              <ShoppingBag size={48} />
+              <p>Tu carrito está vacío</p>
+              <button className="btn-outline-dark" onClick={() => setIsCartOpen(false)}>Seguir comprando</button>
+            </div>
+          ) : (
+            cart.map(item => (
+              <div key={item.id} className="modern-cart-item">
+                <img src={item.image} alt={item.name} />
+                <div className="item-info">
+                  <h4>{item.name}</h4>
+                  <span className="item-price">${item.priceRaw.toLocaleString('es-CO')}</span>
+                  <div className="item-actions">
+                    <div className="qty-picker">
+                      <button onClick={() => updateQuantity(item.id, -1)}><Minus size={14}/></button>
+                      <span>{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.id, 1)}><Plus size={14}/></button>
+                    </div>
+                    <button className="trash-btn" onClick={() => removeFromCart(item.id)}><Trash2 size={18}/></button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        {cart.length > 0 && (
+          <div className="cart-footer-modern">
+            <div className="cart-total-modern">
+              <span>SUBTOTAL</span>
+              <span>${cartTotal.toLocaleString('es-CO')}</span>
+            </div>
+            <button className="btn-premium-solid full-width" onClick={handleCheckout}>
+              FINALIZAR PEDIDO <Phone size={18} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className={`mobile-filters-overlay ${isMobileFiltersOpen ? 'open' : ''}`} onClick={() => setIsMobileFiltersOpen(false)}></div>
+      <div className={`mobile-filters-sheet ${isMobileFiltersOpen ? 'open' : ''}`}>
+        <div className="sheet-header">
+          <h3>Filtrar por</h3>
+          <button onClick={() => setIsMobileFiltersOpen(false)}><X size={24} /></button>
+        </div>
+        <div className="sheet-content">
+          {['Todas', 'Decants', ...categories].map(cat => (
+            <button
+              key={cat}
+              className={`sheet-filter-btn ${activeCategory === cat ? 'active' : ''}`}
+              onClick={() => { setActiveCategory(cat); setIsMobileFiltersOpen(false); }}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {showAdminLogin && (
         <div className="modal-overlay">
           <div className="admin-login-modal">
             <button className="modal-close" onClick={() => setShowAdminLogin(false)}><X size={20} /></button>
             <div className="admin-login-header">
-              <Shield size={40} color="var(--color-button)" />
+              <Shield size={40} color="var(--color-accent)" />
               <h2>Acceso Administrativo</h2>
             </div>
             <p className="admin-login-desc">Ingresa el PIN de 4 dígitos para gestionar tu tienda.</p>
@@ -582,235 +708,178 @@ function App() {
                 />
               ))}
             </div>
-            <button className="btn admin-submit-btn" onClick={verifyPin}>Verificar PIN</button>
+            <button className="btn-premium-solid full-width" onClick={verifyPin}>Verificar PIN</button>
           </div>
         </div>
       )}
 
       {isAdminAuth && (
-        <div className="admin-dashboard-overlay">
-          <div className="admin-dashboard">
-            <button className="admin-close-btn" onClick={() => setIsAdminAuth(false)}><X size={28} /></button>
-            
-            {adminTab === 'menu' && (
-              <div className="admin-menu-view">
-                <h2>¿Qué cambios quieres realizar?</h2>
-                <div className="admin-menu-grid">
-                  <button className="admin-menu-btn" onClick={() => { setEditingProduct(null); setCustomPrices([{size: '100ml', price: 0}]); setAdminTab('add'); }}>
-                    <Plus size={32} /> <span>Agregar Producto</span>
-                  </button>
-                  <button className="admin-menu-btn" onClick={() => setAdminTab('products')}>
-                    <Edit size={32} /> <span>Editar Productos</span>
-                  </button>
-                  <button className="admin-menu-btn" onClick={() => setAdminTab('settings')}>
-                    <Save size={32} /> <span>Configuraciones Generales</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {adminTab !== 'menu' && (
-              <div className="admin-workspace">
-                <div className="admin-workspace-header">
-                  <button className="back-btn" onClick={() => setAdminTab('menu')}>&larr; Volver al Menú</button>
-                  <h3>{adminTab === 'products' ? 'Gestión de Productos' : adminTab === 'add' ? (editingProduct ? 'Editar Producto' : 'Nuevo Producto') : 'Configuración'}</h3>
-                </div>
-                
-                <div className="admin-content-scroll">
-                  {adminTab === 'products' && (
-                    <div className="admin-products-list">
-                      {products.length === 0 && <p style={{ color: '#888' }}>No hay productos.</p>}
-                      {products.map(p => (
-                        <div key={p.id} className="admin-product-item">
-                          <img src={p.image} alt={p.name} />
-                          <div className="admin-prod-info">
-                            <h4>{p.name}</h4>
-                            <p>{p.price}</p>
-                          </div>
-                          <div className="admin-prod-actions">
-                            <button onClick={() => { setEditingProduct(p); setCustomPrices(p.prices ? Object.entries(p.prices).map(([size, price]) => ({size, price})) : [{size: '100ml', price: p.priceRaw || 0}]); setAdminTab('add'); }}><Edit size={18} /></button>
-                            <button onClick={() => handleDeleteProduct(p.id)} style={{color: '#ff3b3b'}}><Trash2 size={18} /></button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {adminTab === 'add' && (
-                    <form onSubmit={handleSaveProduct} className="admin-form">
-                      <div className="form-group">
-                        <label>Nombre del Perfume</label>
-                        <input name="name" required defaultValue={editingProduct?.name} />
-                      </div>
-                      <div className="form-group">
-                        <label>Categorías (Puedes seleccionar varias)</label>
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                          {categories.map(c => (
-                            <label key={c} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-foreground)', cursor: 'pointer', fontWeight: 'normal', margin: 0 }}>
-                              <input type="checkbox" name="product_categories" value={c} defaultChecked={editingProduct?.categories?.includes(c) || editingProduct?.category === c} style={{ width: 'auto' }} />
-                              {c}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="form-group">
-                        <label>Estado del producto</label>
-                        <select name="status" defaultValue={editingProduct?.status || 'activo'}>
-                          <option value="activo">Activo (Disponible)</option>
-                          <option value="agotado">Agotado</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Descripción y Notas (Opcional)</label>
-                        <textarea name="description" rows={3} defaultValue={editingProduct?.description}></textarea>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Tamaños y Precios</label>
-                        {customPrices.map((cp, idx) => (
-                          <div key={idx} style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
-                            <input type="text" placeholder="Tamaño (ej. 50ml)" value={cp.size} onChange={e => {
-                              const newP = [...customPrices];
-                              newP[idx].size = e.target.value;
-                              setCustomPrices(newP);
-                            }} required />
-                            <input type="number" placeholder="Precio" value={cp.price || ''} onChange={e => {
-                              const newP = [...customPrices];
-                              newP[idx].price = parseInt(e.target.value) || 0;
-                              setCustomPrices(newP);
-                            }} required />
-                            <button type="button" onClick={() => setCustomPrices(customPrices.filter((_, i) => i !== idx))} style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', padding: '0 1rem' }}>X</button>
-                          </div>
-                        ))}
-                        <button type="button" onClick={() => setCustomPrices([...customPrices, {size: '', price: 0}])} className="btn" style={{ marginTop: '0.5rem', padding: '0.5rem 1rem' }}>+ Agregar Tamaño</button>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Texto de Promoción (Ej: 30% OFF)</label>
-                        <input name="promotion" defaultValue={editingProduct?.promotion} placeholder="Dejar vacío si no hay promo" />
-                      </div>
-                      <div className="form-group">
-                        <label>Imagen del Producto</label>
-                        <div className="upload-container">
-                          {(tempImageUrl || editingProduct?.image) && (
-                            <img src={tempImageUrl || editingProduct?.image} alt="Preview" className="image-preview" />
-                          )}
-                          <label className="upload-btn">
-                            {isUploading ? 'Subiendo...' : <><UploadCloud size={20} /> Subir Imagen</>}
-                            <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, false)} disabled={isUploading} hidden />
-                          </label>
-                        </div>
-                      </div>
-                      <button type="submit" className="btn" style={{width: '100%', justifyContent: 'center'}} disabled={isUploading}>
-                        <Save size={18} /> {editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
-                      </button>
-                    </form>
-                  )}
-
-                  {adminTab === 'settings' && (
-                    <form onSubmit={handleSaveSettings} className="admin-form">
-                      <div className="admin-settings-section">
-                        <h4 style={{marginBottom: '1rem', color: 'var(--color-button)'}}>Configuración de WhatsApp</h4>
-                        <div className="form-group">
-                          <label>Número de WhatsApp (con código de país ej: 57314...)</label>
-                          <input name="phoneNumber" required defaultValue={phoneNumber} />
-                        </div>
-                        <div className="form-group">
-                          <label>Instagram URL (Opcional)</label>
-                          <input name="instagramUrl" defaultValue={instagramUrl} placeholder="https://instagram.com/hermida..." />
-                        </div>
-                        <div className="form-group">
-                          <label>TikTok URL (Opcional)</label>
-                          <input name="tiktokUrl" defaultValue={tiktokUrl} placeholder="https://tiktok.com/@hermida..." />
-                        </div>
-                      </div>
-
-                      <div className="admin-settings-section">
-                        <h4 style={{marginBottom: '1rem', color: 'var(--color-button)'}}>Diseño y Contenido</h4>
-                        <div className="form-group">
-                          <label>Categorías (separadas por coma)</label>
-                          <input name="categories" required defaultValue={categories.join(', ')} />
-                        </div>
-                        <div className="form-group">
-                          <label>Mensajes del Carrusel (separados por coma)</label>
-                          <input name="announcements" required defaultValue={announcements.join(', ')} />
-                        </div>
-                        <div className="form-group">
-                          <label>Logotipo del Sitio</label>
-                          <div className="upload-container">
-                            <img src={siteLogo} alt="Logo Preview" className="image-preview" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
-                            <label className="upload-btn">
-                              {isUploading ? 'Actualizando...' : <><UploadCloud size={20} /> Subir Nuevo Logo</>}
-                              <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, true)} disabled={isUploading} hidden />
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="admin-settings-section" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.5rem' }}>
-                        <h4 style={{marginBottom: '1rem', color: 'var(--color-button)'}}>Seguridad</h4>
-                        <div className="form-group">
-                          <label>Cambiar PIN de Admin (4 dígitos)</label>
-                          <div style={{ display: 'flex', gap: '1rem' }}>
-                            <input type="text" maxLength={4} placeholder="Nuevo PIN" id="newPinInput" onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }} />
-                            <button type="button" className="btn" onClick={() => {
-                              const input = document.getElementById('newPinInput') as HTMLInputElement;
-                              if (input.value.length === 4) { handleSavePin(input.value); input.value = ''; }
-                              else alert('El PIN debe tener exactamente 4 dígitos.');
-                            }}>Actualizar PIN</button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button type="submit" className="btn" style={{width: '100%', justifyContent: 'center', marginTop: '1rem'}}>
-                        <Save size={18} /> Guardar Configuración Global
-                      </button>
-                    </form>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {isCartOpen && (
-        <div className="cart-sidebar open">
-          <div className="cart-header">
-            <h3>Tu Carrito ({cart.length})</h3>
-            <button className="close-cart-btn" onClick={() => setIsCartOpen(false)}><X size={24} color="var(--color-foreground)" /></button>
-          </div>
-          <div className="cart-items">
-            {cart.length === 0 ? (
-              <div className="empty-cart"><ShoppingBag size={48} /><p>Tu carrito está vacío</p></div>
-            ) : (
-              cart.map(item => (
-                <div key={item.id} className="cart-item">
-                  <img src={item.image} alt={item.name} className="cart-item-image" />
-                  <div className="cart-item-details">
-                    <h4 style={{ color: 'var(--color-foreground)' }}>{item.name}</h4>
-                    <span className="cart-item-price">${item.priceRaw.toLocaleString('es-CO')}</span>
-                    <div className="cart-item-controls">
-                      <div className="quantity-controls">
-                        <button onClick={() => updateQuantity(item.id, -1)}><Minus size={14} /></button>
-                        <span style={{ color: '#fff', fontSize: '0.9rem', width: '20px', textAlign: 'center' }}>{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.id, 1)}><Plus size={14} /></button>
-                      </div>
-                      <button className="remove-item-btn" onClick={() => removeFromCart(item.id)}><Trash2 size={16} /></button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          {cart.length > 0 && (
-            <div className="cart-footer">
-              <div className="cart-total" style={{ color: 'var(--color-foreground)' }}><span>Total:</span><span>${cartTotal.toLocaleString('es-CO')}</span></div>
-              <button className="checkout-btn" onClick={handleCheckout}>Hacer Pedido por WhatsApp <Phone size={18} /></button>
-            </div>
-          )}
-        </div>
-      )}
+         <div className="admin-dashboard-overlay">
+           <div className="admin-dashboard">
+             <button className="admin-close-btn" onClick={() => setIsAdminAuth(false)}><X size={28} /></button>
+             
+             {adminTab === 'menu' && (
+               <div className="admin-menu-view">
+                 <h2>Panel de Administración</h2>
+                 <div className="admin-menu-grid">
+                   <button className="admin-menu-btn" onClick={() => { setEditingProduct(null); setCustomPrices([{size: '100ml', price: 0}]); setAdminTab('add'); }}>
+                     <Plus size={32} /> <span>Agregar Producto</span>
+                   </button>
+                   <button className="admin-menu-btn" onClick={() => setAdminTab('products')}>
+                     <Edit size={32} /> <span>Editar Productos</span>
+                   </button>
+                   <button className="admin-menu-btn" onClick={() => setAdminTab('settings')}>
+                     <Save size={32} /> <span>Configuraciones</span>
+                   </button>
+                 </div>
+               </div>
+             )}
+ 
+             {adminTab !== 'menu' && (
+               <div className="admin-workspace">
+                 <div className="admin-workspace-header">
+                   <button className="back-btn" onClick={() => setAdminTab('menu')}>&larr; Volver</button>
+                   <h3>{adminTab === 'products' ? 'Productos' : adminTab === 'add' ? (editingProduct ? 'Editar' : 'Nuevo') : 'Configuración'}</h3>
+                 </div>
+                 
+                 <div className="admin-content-scroll">
+                   {adminTab === 'products' && (
+                     <div className="admin-products-list">
+                       {products.length === 0 && <p style={{ color: '#888' }}>No hay productos.</p>}
+                       {products.map(p => (
+                         <div key={p.id} className="admin-product-item">
+                           <img src={p.image} alt={p.name} />
+                           <div className="admin-prod-info">
+                             <h4>{p.name}</h4>
+                             <p>{p.price}</p>
+                           </div>
+                           <div className="admin-prod-actions">
+                             <button onClick={() => { setEditingProduct(p); setCustomPrices(p.prices ? Object.entries(p.prices).map(([size, price]) => ({size, price})) : [{size: '100ml', price: p.priceRaw || 0}]); setAdminTab('add'); }} className="edit-btn"><Edit size={18} /></button>
+                             <button onClick={() => handleDeleteProduct(p.id)} className="del-btn"><Trash2 size={18} /></button>
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   )}
+ 
+                   {adminTab === 'add' && (
+                     <form onSubmit={handleSaveProduct} className="admin-form">
+                       <div className="form-group">
+                         <label>Nombre del Perfume</label>
+                         <input name="name" required defaultValue={editingProduct?.name} />
+                       </div>
+                       <div className="form-group">
+                         <label>Categorías</label>
+                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                           {categories.map(c => (
+                             <label key={c} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', margin: 0 }}>
+                               <input type="checkbox" name="product_categories" value={c} defaultChecked={editingProduct?.categories?.includes(c) || editingProduct?.category === c} />
+                               {c}
+                             </label>
+                           ))}
+                         </div>
+                       </div>
+                       <div className="form-group">
+                         <label>Estado</label>
+                         <select name="status" defaultValue={editingProduct?.status || 'activo'}>
+                           <option value="activo">Activo</option>
+                           <option value="agotado">Agotado</option>
+                         </select>
+                       </div>
+                       <div className="form-group">
+                         <label>Descripción</label>
+                         <textarea name="description" rows={3} defaultValue={editingProduct?.description}></textarea>
+                       </div>
+ 
+                       <div className="form-group">
+                         <label>Tamaños y Precios</label>
+                         {customPrices.map((cp, idx) => (
+                           <div key={idx} style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
+                             <input type="text" placeholder="Tamaño" value={cp.size} onChange={e => {
+                               const newP = [...customPrices];
+                               newP[idx].size = e.target.value;
+                               setCustomPrices(newP);
+                             }} required />
+                             <input type="number" placeholder="Precio" value={cp.price || ''} onChange={e => {
+                               const newP = [...customPrices];
+                               newP[idx].price = parseInt(e.target.value) || 0;
+                               setCustomPrices(newP);
+                             }} required />
+                             <button type="button" onClick={() => setCustomPrices(customPrices.filter((_, i) => i !== idx))} style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', padding: '0 1rem' }}>X</button>
+                           </div>
+                         ))}
+                         <button type="button" onClick={() => setCustomPrices([...customPrices, {size: '', price: 0}])} className="btn-outline-dark" style={{ marginTop: '0.5rem' }}>+ Agregar Tamaño</button>
+                       </div>
+ 
+                       <div className="form-group">
+                         <label>Promoción</label>
+                         <input name="promotion" defaultValue={editingProduct?.promotion} placeholder="Ej: 30% OFF" />
+                       </div>
+                       <div className="form-group">
+                         <label>Imagen</label>
+                         <div className="upload-container">
+                           {(tempImageUrl || editingProduct?.image) && (
+                             <img src={tempImageUrl || editingProduct?.image} alt="Preview" className="image-preview" />
+                           )}
+                           <label className="btn-outline-dark upload-btn-label">
+                             {isUploading ? 'Subiendo...' : <><UploadCloud size={20} /> Subir Imagen</>}
+                             <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, false)} disabled={isUploading} hidden />
+                           </label>
+                         </div>
+                       </div>
+                       <button type="submit" className="btn-premium-solid full-width" disabled={isUploading}>
+                         <Save size={18} /> {editingProduct ? 'Guardar Cambios' : 'Crear Producto'}
+                       </button>
+                     </form>
+                   )}
+ 
+                   {adminTab === 'settings' && (
+                     <form onSubmit={handleSaveSettings} className="admin-form">
+                       <div className="form-group">
+                         <label>WhatsApp (código país)</label>
+                         <input name="phoneNumber" required defaultValue={phoneNumber} />
+                       </div>
+                       <div className="form-group">
+                         <label>Instagram URL</label>
+                         <input name="instagramUrl" defaultValue={instagramUrl} />
+                       </div>
+                       <div className="form-group">
+                         <label>TikTok URL</label>
+                         <input name="tiktokUrl" defaultValue={tiktokUrl} />
+                       </div>
+                       <div className="form-group">
+                         <label>Categorías (comas)</label>
+                         <input name="categories" required defaultValue={categories.join(', ')} />
+                       </div>
+                       <div className="form-group">
+                         <label>Logo</label>
+                         <div className="upload-container">
+                           <img src={siteLogo} alt="Logo" className="image-preview" />
+                           <label className="btn-outline-dark upload-btn-label">
+                             {isUploading ? 'Actualizando...' : 'Subir Nuevo Logo'}
+                             <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, true)} disabled={isUploading} hidden />
+                           </label>
+                         </div>
+                       </div>
+                       <div className="form-group">
+                         <label>Nuevo PIN</label>
+                         <input type="text" maxLength={4} id="newPinInput" />
+                         <button type="button" className="btn-outline-dark" onClick={() => {
+                           const input = document.getElementById('newPinInput') as HTMLInputElement;
+                           if (input.value.length === 4) { handleSavePin(input.value); input.value = ''; }
+                         }}>Actualizar PIN</button>
+                       </div>
+                       <button type="submit" className="btn-premium-solid full-width">
+                         Guardar Configuración
+                       </button>
+                     </form>
+                   )}
+                 </div>
+               </div>
+             )}
+           </div>
+         </div>
+       )}
     </>
   );
 }
