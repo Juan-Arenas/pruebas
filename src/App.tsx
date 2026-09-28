@@ -387,9 +387,7 @@ function App() {
           </p>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '4rem 0', color: '#888' }}>
-              <p>Cargando productos...</p>
-            </div>
+            <div style={{ minHeight: '400px' }}></div>
           ) : filteredProducts.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 0', color: '#888' }}>
               <p>No hay perfumes en esta categoría.</p>
